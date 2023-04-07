@@ -1,9 +1,7 @@
 mod chunk;
-mod memory;
 
 use std::env::args;
 use chunk::*;
-
 
 fn main() {
     let args: Vec<String> = args().collect();
@@ -12,5 +10,5 @@ fn main() {
 
     chunk.write_opcode(OpCode::OpReturn);
 
-    println!("{:?}", chunk.disassemble());
+    chunk.disassemble("test chunk");
 }

@@ -38,10 +38,26 @@ impl Chunk {
         self.code = Vec::<u8>::new();
     }
 
-    pub fn disassemble(&self) -> Vec<OpCode> {
-        self.code.clone()
-                 .into_iter()
-                 .map(|v| v.into())
-                 .collect()
+    pub fn disassemble<T: ToString>(&self, name: T) {
+        println!("== {} ==", name.to_string());
+
+        let mut offset = 0;
+        while offset < self.code.len() {
+            offset = self.disassemble_instruction(offset);
+        }
+    }
+
+    fn disassemble_instruction(&self, offset: usize) -> usize {
+        print!("{offset:04} ");
+
+        let instruction: OpCode = self.code[offset].into();
+        match instruction {
+            OpCode::OpReturn => self.simple_instruction("OP_RETURN", offset),
+        }
+    }
+
+    fn simple_instruction(&self, name: &str, offset: usize) -> usize {
+        println!("{name}");
+        offset + 1
     }
 }
