@@ -1,10 +1,13 @@
+#![allow(dead_code)]
+
 mod chunk;
+mod value;
 
 use std::env::args;
 use chunk::*;
 
 fn main() {
-    let args: Vec<String> = args().collect();
+    let _args: Vec<String> = args().collect();
 
     let mut chunk = Chunk::new();
 

@@ -1,3 +1,5 @@
+use crate::value::*;
+
 #[derive(Debug)]
 pub enum OpCode {
     OpReturn = 0,
@@ -21,12 +23,14 @@ impl From<OpCode> for u8 {
 #[derive(Debug)]
 pub struct Chunk {
     code: Vec<u8>,
+    constants: Vec<Value>,
 }
 
 impl Chunk {
     pub fn new() -> Chunk {
         Chunk {
             code: Vec::<u8>::new(),
+            constants: Vec::<Value>::new(),
         }
     }
 
@@ -36,6 +40,7 @@ impl Chunk {
 
     pub fn free(&mut self) {
         self.code = Vec::<u8>::new();
+        self.constants = Vec::<Value>::new();
     }
 
     pub fn disassemble<T: ToString>(&self, name: T) {
@@ -45,6 +50,11 @@ impl Chunk {
         while offset < self.code.len() {
             offset = self.disassemble_instruction(offset);
         }
+    }
+
+    pub fn add_constant(&mut self, value: Value) -> usize {
+        self.constants.push(value);
+        self.constants.len() - 1
     }
 
     fn disassemble_instruction(&self, offset: usize) -> usize {
