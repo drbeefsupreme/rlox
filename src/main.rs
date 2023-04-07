@@ -5,13 +5,16 @@ mod value;
 
 use std::env::args;
 use chunk::*;
+use value::*;
 
 fn main() {
     let _args: Vec<String> = args().collect();
 
     let mut chunk = Chunk::new();
 
-    chunk.write_opcode(OpCode::OpReturn);
+    let constant = chunk.add_constant(Value::Number(1.2));
+    chunk.write(OpCode::OpConstant.into());
+    chunk.write(constant as u8); // probably the wrong thing to do
 
     chunk.disassemble("test chunk");
 }

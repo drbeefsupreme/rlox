@@ -3,12 +3,14 @@ use crate::value::*;
 #[derive(Debug)]
 pub enum OpCode {
     OpReturn = 0,
+    OpConstant = 1,
 }
 
 impl From<u8> for OpCode {
     fn from(code: u8) -> Self {
         match code {
             0 => OpCode::OpReturn,
+            1 => OpCode::OpConstant,
             _ => unimplemented!("Invalid OpCode"),
         }
     }
@@ -34,8 +36,8 @@ impl Chunk {
         }
     }
 
-    pub fn write_opcode(&mut self, byte: OpCode) {
-        self.code.push(byte.into());
+    pub fn write(&mut self, byte: u8) {
+        self.code.push(byte);
     }
 
     pub fn free(&mut self) {
@@ -63,11 +65,20 @@ impl Chunk {
         let instruction: OpCode = self.code[offset].into();
         match instruction {
             OpCode::OpReturn => self.simple_instruction("OP_RETURN", offset),
+            OpCode::OpConstant => self.const_instruction("OP_CONSTANT", offset),
         }
     }
 
     fn simple_instruction(&self, name: &str, offset: usize) -> usize {
         println!("{name}");
         offset + 1
+    }
+
+    fn const_instruction(&self, name: &str, offset: usize) -> usize {
+        // index of constant in self.constants
+        let constant = self.code[offset + 1];
+        print!("{name} {} ", constant);
+        self.constants[constant as usize].print();
+        offset + 2
     }
 }
