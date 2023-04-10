@@ -5,6 +5,10 @@ pub enum OpCode {
     OpReturn = 0,
     OpConstant = 1,
     OpNegate = 2,
+    OpAdd = 3,
+    OpSub = 4,
+    OpMul = 5,
+    OpDiv = 6,
 }
 
 #[derive(Debug)]
@@ -69,9 +73,13 @@ impl Chunk {
 
         let instruction: OpCode = self.code[offset].into();
         match instruction {
-            OpCode::OpReturn => self.simple_instruction("OP_RETURN", offset),
+            OpCode::OpReturn   => self.simple_instruction("OP_RETURN", offset),
             OpCode::OpConstant => self.const_instruction("OP_CONSTANT", offset),
-            OpCode::OpNegate => self.simple_instruction("OP_NEGATE", offset),
+            OpCode::OpNegate   => self.simple_instruction("OP_NEGATE", offset),
+            OpCode::OpAdd      => self.simple_instruction("OP_ADD", offset),
+            OpCode::OpSub      => self.simple_instruction("OP_SUBTRACT", offset),
+            OpCode::OpMul      => self.simple_instruction("OP_MULTIPLY", offset),
+            OpCode::OpDiv      => self.simple_instruction("OP_DIVIDE", offset),
         }
     }
 
@@ -97,6 +105,10 @@ impl From<u8> for OpCode {
             0 => OpCode::OpReturn,
             1 => OpCode::OpConstant,
             2 => OpCode::OpNegate,
+            3 => OpCode::OpAdd,
+            4 => OpCode::OpSub,
+            5 => OpCode::OpMul,
+            6 => OpCode::OpDiv,
             _ => unimplemented!("Invalid OpCode"),
         }
     }

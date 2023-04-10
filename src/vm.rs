@@ -15,6 +15,13 @@ pub enum InterpretResult {
     RuntimeError,
 }
 
+enum BinaryOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+
 impl VM {
     pub fn new() -> VM {
         VM {
@@ -74,19 +81,35 @@ impl VM {
                         self.push(Value::Number(-f));
                     }
                 },
+                OpCode::OpAdd => self.binary_op(BinaryOp::Add),
+                OpCode::OpSub => self.binary_op(BinaryOp::Sub),
+                OpCode::OpMul => self.binary_op(BinaryOp::Mul),
+                OpCode::OpDiv => self.binary_op(BinaryOp::Div),
             }
         }
     }
 
     fn read_byte(&mut self, chunk: &Chunk) -> OpCode {
-        let val: OpCode = chunk.read_code(self.ip).into();
+        let op: OpCode = chunk.read_code(self.ip).into();
+        self.ip += 1;
+        op
+    }
+
+    fn read_constant(&mut self, chunk: &Chunk) -> Value {
+        let val: Value = chunk.read_constant(chunk.read_code(self.ip) as usize);
         self.ip += 1;
         val
     }
 
-    fn read_constant(&mut self, chunk: &Chunk) -> Value {
-        let val = chunk.read_constant(chunk.read_code(self.ip) as usize);
-        self.ip += 1;
-        val
+    fn binary_op(&mut self, op: BinaryOp) {
+        // might need a while loop here, 15.2
+        if let (Value::Number(b), Value::Number(a)) = (self.pop(), self.pop()) {
+            match op {
+                BinaryOp::Add => self.push(Value::Number(a + b)),
+                BinaryOp::Sub => self.push(Value::Number(a - b)),
+                BinaryOp::Mul => self.push(Value::Number(a * b)),
+                BinaryOp::Div => self.push(Value::Number(a / b)),
+            };
+        }
     }
 }
