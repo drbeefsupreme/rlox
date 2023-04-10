@@ -76,7 +76,6 @@ impl VM {
                 },
             }
         }
-        InterpretResult::Ok
     }
 
     fn read_byte(&mut self, chunk: &Chunk) -> OpCode {
