@@ -2,13 +2,13 @@ use crate::value::*;
 
 #[derive(Debug)]
 pub enum OpCode {
-    OpReturn = 0,
-    OpConstant = 1,
-    OpNegate = 2,
-    OpAdd = 3,
-    OpSub = 4,
-    OpMul = 5,
-    OpDiv = 6,
+    Return = 0,
+    Constant = 1,
+    Negate = 2,
+    Add = 3,
+    Sub = 4,
+    Mul = 5,
+    Div = 6,
 }
 
 #[derive(Debug)]
@@ -73,13 +73,13 @@ impl Chunk {
 
         let instruction: OpCode = self.code[offset].into();
         match instruction {
-            OpCode::OpReturn   => self.simple_instruction("OP_RETURN", offset),
-            OpCode::OpConstant => self.const_instruction("OP_CONSTANT", offset),
-            OpCode::OpNegate   => self.simple_instruction("OP_NEGATE", offset),
-            OpCode::OpAdd      => self.simple_instruction("OP_ADD", offset),
-            OpCode::OpSub      => self.simple_instruction("OP_SUBTRACT", offset),
-            OpCode::OpMul      => self.simple_instruction("OP_MULTIPLY", offset),
-            OpCode::OpDiv      => self.simple_instruction("OP_DIVIDE", offset),
+            OpCode::Return   => self.simple_instruction("OP_RETURN", offset),
+            OpCode::Constant => self.const_instruction("OP_CONSTANT", offset),
+            OpCode::Negate   => self.simple_instruction("OP_NEGATE", offset),
+            OpCode::Add      => self.simple_instruction("OP_ADD", offset),
+            OpCode::Sub      => self.simple_instruction("OP_SUBTRACT", offset),
+            OpCode::Mul      => self.simple_instruction("OP_MULTIPLY", offset),
+            OpCode::Div      => self.simple_instruction("OP_DIVIDE", offset),
         }
     }
 
@@ -102,13 +102,13 @@ impl Chunk {
 impl From<u8> for OpCode {
     fn from(code: u8) -> Self {
         match code {
-            0 => OpCode::OpReturn,
-            1 => OpCode::OpConstant,
-            2 => OpCode::OpNegate,
-            3 => OpCode::OpAdd,
-            4 => OpCode::OpSub,
-            5 => OpCode::OpMul,
-            6 => OpCode::OpDiv,
+            0 => OpCode::Return,
+            1 => OpCode::Constant,
+            2 => OpCode::Negate,
+            3 => OpCode::Add,
+            4 => OpCode::Sub,
+            5 => OpCode::Mul,
+            6 => OpCode::Div,
             _ => unimplemented!("Invalid OpCode"),
         }
     }

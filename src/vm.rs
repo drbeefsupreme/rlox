@@ -68,23 +68,23 @@ impl VM {
 
             let instruction = self.read_byte(chunk);
             match instruction {
-                OpCode::OpReturn => {
+                OpCode::Return => {
                     println!("{:?}", self.pop());
                     return InterpretResult::Ok;
                 },
-                OpCode::OpConstant => {
+                OpCode::Constant => {
                     let constant: Value = self.read_constant(chunk);
                     self.push(constant);
                 },
-                OpCode::OpNegate => {
+                OpCode::Negate => {
                     if let Value::Number(f) = self.pop() {
                         self.push(Value::Number(-f));
                     }
                 },
-                OpCode::OpAdd => self.binary_op(BinaryOp::Add),
-                OpCode::OpSub => self.binary_op(BinaryOp::Sub),
-                OpCode::OpMul => self.binary_op(BinaryOp::Mul),
-                OpCode::OpDiv => self.binary_op(BinaryOp::Div),
+                OpCode::Add => self.binary_op(BinaryOp::Add),
+                OpCode::Sub => self.binary_op(BinaryOp::Sub),
+                OpCode::Mul => self.binary_op(BinaryOp::Mul),
+                OpCode::Div => self.binary_op(BinaryOp::Div),
             }
         }
     }
