@@ -1,7 +1,7 @@
 use crate::chunk::*;
 use crate::value::*;
 use crate::STACK_MAX;
-use crate::compiler;
+use crate::compiler::*;
 
 pub struct VM {
 //    chunk: Chunk,
@@ -45,7 +45,8 @@ impl VM {
     }
 
     pub fn interpret(&mut self, source: &String) -> InterpretResult {
-        compiler::compile(source);
+        let mut compiler = Compiler::new(source);
+        compiler.compile();
         InterpretResult::Ok
     }
 

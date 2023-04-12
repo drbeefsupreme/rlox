@@ -4,6 +4,8 @@ mod chunk;
 mod value;
 mod vm;
 mod compiler;
+mod token;
+mod scanner;
 
 use std::env;
 use std::env::args;
