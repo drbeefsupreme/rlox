@@ -44,7 +44,7 @@ impl VM {
         self.stack.pop().expect("nothing left to pop off stack")
     }
 
-    pub fn interpret(&mut self, source: String) -> InterpretResult {
+    pub fn interpret(&mut self, source: &String) -> InterpretResult {
         compiler::compile(source);
         InterpretResult::Ok
     }

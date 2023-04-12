@@ -1,5 +1,5 @@
 pub struct Scanner {
-    source: String,
+    source: Vec<char>,
     start: usize,
     current: usize,
     line: usize,
@@ -38,7 +38,7 @@ enum TokenType {
     Error, EOF
 }
 
-pub fn compile(source: String) {
+pub fn compile(source: &String) {
     let mut scanner = Scanner::new(source);
 
     let mut line = 99999;
@@ -58,9 +58,9 @@ pub fn compile(source: String) {
 }
 
 impl Scanner {
-    pub fn new(source: String) -> Self {
+    pub fn new(source: &String) -> Self {
         Self {
-            source,
+            source: source.chars().collect::<Vec<char>>(),
             start: 0,
             current: 0,
             line: 1,
@@ -85,56 +85,56 @@ impl Scanner {
 
         match c {
             // 1 character lexemes
-            b'(' => self.make_token(TokenType::Pal),
-            b')' => self.make_token(TokenType::Par),
-            b'{' => self.make_token(TokenType::Kel),
-            b'}' => self.make_token(TokenType::Ker),
-            b';' => self.make_token(TokenType::Mic),
-            b',' => self.make_token(TokenType::Com),
-            b'.' => self.make_token(TokenType::Dot),
-            b'-' => self.make_token(TokenType::Hep),
-            b'+' => self.make_token(TokenType::Lus),
-            b'/' => self.make_token(TokenType::Fas),
-            b'*' => self.make_token(TokenType::Tar),
+            '(' => self.make_token(TokenType::Pal),
+            ')' => self.make_token(TokenType::Par),
+            '{' => self.make_token(TokenType::Kel),
+            '}' => self.make_token(TokenType::Ker),
+            ';' => self.make_token(TokenType::Mic),
+            ',' => self.make_token(TokenType::Com),
+            '.' => self.make_token(TokenType::Dot),
+            '-' => self.make_token(TokenType::Hep),
+            '+' => self.make_token(TokenType::Lus),
+            '/' => self.make_token(TokenType::Fas),
+            '*' => self.make_token(TokenType::Tar),
 
             // 2 character lexemes
-            b'!' => if self.mate(b'=') {
+            '!' => if self.mate('=') {
                         self.make_token(TokenType::ZapTis)
                     } else {
                         self.make_token(TokenType::Zap)
                     },
-            b'=' => if self.mate(b'=') {
+            '=' => if self.mate('=') {
                         self.make_token(TokenType::TisTis)
                     } else {
                         self.make_token(TokenType::Tis)
                     },
-            b'<' => if self.mate(b'=') {
+            '<' => if self.mate('=') {
                         self.make_token(TokenType::GalTis)
                     } else {
                         self.make_token(TokenType::Gal)
                     },
-            b'>' => if self.mate(b'=') {
+            '>' => if self.mate('=') {
                         self.make_token(TokenType::GarTis)
                     } else {
                         self.make_token(TokenType::Gar)
                     },
 
             // literal tokens
-            b'"' => self.string(),
+            '"' => self.string(),
 
             _   => self.error_token("huh".to_string()),
         }
     }
 
-    fn advance(&mut self) -> u8 {
+    fn advance(&mut self) -> char {
         self.current += 1;
-        self.source.as_bytes()[self.current - 1]
+        self.source[self.current - 1]
     }
 
-    fn mate(&mut self, expected: u8) -> bool {
+    fn mate(&mut self, expected: char) -> bool {
         if self.is_at_end() {
             return false
-        } else if self.source.as_bytes()[self.current] != expected {
+        } else if self.source[self.current] != expected {
             return false
         }
 
@@ -143,8 +143,8 @@ impl Scanner {
     }
 
     fn string(&mut self) -> Token {
-        while self.peek() != b'"' && !self.is_at_end() {
-            if self.peek() == b'\n' {
+        while self.peek() != '"' && !self.is_at_end() {
+            if self.peek() == '\n' {
                 self.line += 1;
             }
             self.advance();
@@ -166,34 +166,34 @@ impl Scanner {
     }
 
     fn identifier_type(&self) -> TokenType {
-        match self.source.as_bytes()[self.start] {
-            b'a' => self.check_keyword(1, 2, "nd", TokenType::And),
-            b'c' => self.check_keyword(1, 4, "lass", TokenType::Class),
-            b'e' => self.check_keyword(1, 3, "lse", TokenType::Else),
-            b'i' => self.check_keyword(1, 1, "f", TokenType::If),
-            b'n' => self.check_keyword(1, 2, "il", TokenType::Nil),
-            b'o' => self.check_keyword(1, 1, "r", TokenType::Or),
-            b'p' => self.check_keyword(1, 4, "rint", TokenType::Print),
-            b'r' => self.check_keyword(1, 5, "eturn", TokenType::Return),
-            b's' => self.check_keyword(1, 4, "uper", TokenType::Super),
-            b'v' => self.check_keyword(1, 2, "ar", TokenType::Var),
-            b'w' => self.check_keyword(1, 4, "hile", TokenType::While),
+        match self.source[self.start] {
+            'a' => self.check_keyword(1, 2, "nd", TokenType::And),
+            'c' => self.check_keyword(1, 4, "lass", TokenType::Class),
+            'e' => self.check_keyword(1, 3, "lse", TokenType::Else),
+            'i' => self.check_keyword(1, 1, "f", TokenType::If),
+            'n' => self.check_keyword(1, 2, "il", TokenType::Nil),
+            'o' => self.check_keyword(1, 1, "r", TokenType::Or),
+            'p' => self.check_keyword(1, 4, "rint", TokenType::Print),
+            'r' => self.check_keyword(1, 5, "eturn", TokenType::Return),
+            's' => self.check_keyword(1, 4, "uper", TokenType::Super),
+            'v' => self.check_keyword(1, 2, "ar", TokenType::Var),
+            'w' => self.check_keyword(1, 4, "hile", TokenType::While),
 
-            b'f' => if self.current - self.start > 1 {
-                return match self.source.as_bytes()[self.start + 1] {
-                    b'a' => self.check_keyword(2, 3, "lse", TokenType::False),
-                    b'o' => self.check_keyword(2, 1, "r", TokenType::For),
-                    b'u' => self.check_keyword(2, 1, "n", TokenType::Fun),
+            'f' => if self.current - self.start > 1 {
+                return match self.source[self.start + 1] {
+                    'a' => self.check_keyword(2, 3, "lse", TokenType::False),
+                    'o' => self.check_keyword(2, 1, "r", TokenType::For),
+                    'u' => self.check_keyword(2, 1, "n", TokenType::Fun),
                     _ => TokenType::Identifier,
                 }
             } else {
                 TokenType::Identifier
             },
 
-            b't' => if self.current - self.start > 1 {
-                return match self.source.as_bytes()[self.start + 1] {
-                    b'h' => self.check_keyword(2, 2, "is", TokenType::This),
-                    b'r' => self.check_keyword(2, 2, "ue", TokenType::True),
+            't' => if self.current - self.start > 1 {
+                return match self.source[self.start + 1] {
+                    'h' => self.check_keyword(2, 2, "is", TokenType::This),
+                    'r' => self.check_keyword(2, 2, "ue", TokenType::True),
                     _ => TokenType::Identifier,
                 }
             } else {
@@ -204,14 +204,19 @@ impl Scanner {
         }
     }
 
-    fn check_keyword(&self, start: usize, _length: usize, rest: &str, toke: TokenType) -> TokenType {
-        // let comp: String = self.source[self.start + start..self.current]
-        //     .iter()
-        //     .collect();
+    fn check_keyword(&self,
+                     start: usize,
+                     _length: usize,
+                     rest: &str,
+                     toke: TokenType
+    ) -> TokenType {
+        let comp: String = self.source[self.start + start..self.current]
+            .iter()
+            .collect();
 
-        // if comp.as_str() == rest {
-        //     return toke;
-        // }
+        if comp.as_str() == rest {
+            return toke;
+        }
 
         TokenType::Identifier
     }
@@ -222,7 +227,7 @@ impl Scanner {
         }
 
         // Look for a fractional part
-        if self.peek() == b'.' && Self::is_digit(self.peek_next()) {
+        if self.peek() == '.' && Self::is_digit(self.peek_next()) {
             // Consume the "."
             self.advance();
 
@@ -238,17 +243,17 @@ impl Scanner {
         loop {
             let c = self.peek();
             match c {
-                b' ' | b'\r' | b'\t' => { self.advance(); break; },
+                ' ' | '\r' | '\t' => { self.advance(); break; },
 
-                b'\n' => {
+                '\n' => {
                              self.line += 1;
                              self.advance();
                              break;
                          },
-                b'/' => {
-                    if self.peek_next() == b'/' {
+                '/' => {
+                    if self.peek_next() == '/' {
                         // A comment goes until the end of the line.
-                        while self.peek() != b'\n' && !self.is_at_end() {
+                        while self.peek() != '\n' && !self.is_at_end() {
                             self.advance();
                         }
                     } else {
@@ -261,19 +266,19 @@ impl Scanner {
         }
     }
 
-    fn peek(&self) -> u8 {
-        self.source.as_bytes()[self.current]
+    fn peek(&self) -> char {
+        self.source[self.current]
     }
 
-    fn peek_next(&self) -> u8 {
+    fn peek_next(&self) -> char {
         if self.is_at_end() {
-            return b'\0'
+            return '\0'
         }
-        self.source.as_bytes()[self.current + 1]
+        self.source[self.current + 1]
     }
 
     fn is_at_end(&self) -> bool {
-        self.peek() == b'\0'
+        self.peek() == '\0'
 //        self.source.as_bytes()[self.current] == b'\0'
     }
 
@@ -296,14 +301,14 @@ impl Scanner {
     }
 
     //TODO probably a rust way to do this
-    fn is_digit(c: u8) -> bool {
-        c >= b'0' && c <= b'9'
+    fn is_digit(c: char) -> bool {
+        c >= '0' && c <= '9'
     }
 
     //TODO probably a rust way to do this
-    fn is_alpha(c: u8) -> bool {
-        c >= b'a' && c <= b'z' ||
-            c >= b'A' && c <= b'Z' ||
-            c == b'_'
+    fn is_alpha(c: char) -> bool {
+        c >= 'a' && c <= 'z' ||
+            c >= 'A' && c <= 'Z' ||
+            c == '_'
     }
 }
