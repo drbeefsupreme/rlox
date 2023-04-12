@@ -20,9 +20,9 @@ fn main() {
     let mut vm: VM = VM::new();
 
     if args.len() == 1 {
-        repl();
+        repl(&mut vm);
     } else if args.len() == 2 {
-        run_file(&args[1]);
+        run_file(&mut vm, &args[1]);
     } else {
         eprintln!("Usage: rlox [path]");
         std::process::exit(64);
@@ -31,18 +31,18 @@ fn main() {
     vm.free();
 }
 
-fn repl() {
+fn repl(vm: &mut VM) {
     loop {
         print!("> ");
 
         let line = read!("{}\n");
-        interpret(line);
+        vm.interpret(&line);
     }
 }
 
-fn run_file(path: &str) -> io::Result<InterpretResult> {
+fn run_file(vm: &mut VM, path: &str) -> io::Result<InterpretResult> {
     let source = std::fs::read_to_string(path.to_string())?;
-    let result = interpret(source);
+    let result = vm.interpret(&source);
 
     match result {
         InterpretResult::CompileError => std::process::exit(65),
@@ -51,5 +51,3 @@ fn run_file(path: &str) -> io::Result<InterpretResult> {
     };
     Ok(result)
 }
-
-fn interpret(code: String) -> InterpretResult { todo!() }
