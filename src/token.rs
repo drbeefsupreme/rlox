@@ -1,6 +1,6 @@
 pub struct Token {
     pub toke: TokenType,
-    pub lexeme: String,
+//    pub lexeme: String,
     pub line: usize,
 }
 
@@ -19,7 +19,7 @@ pub enum TokenType {
     Gal, GalTis,
 
     // Literals
-    Identifier, String, Number,
+    Identifier(String), StringLiteral(String), Number(f64),
 
     // Keywords
     And, Class, Else, False,
@@ -27,5 +27,5 @@ pub enum TokenType {
     Print, Return, Super, This,
     True, Var, While,
 
-    Error, EOF
+    Error(String), EOF
 }

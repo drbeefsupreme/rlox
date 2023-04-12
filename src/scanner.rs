@@ -1,33 +1,39 @@
 use crate::token::*;
+use std::iter::Peekable;
+use std::str::CharIndices;
 
-pub struct Scanner {
-    source: Vec<char>,
-    start: usize,
-    current: usize,
-    line: usize,
+pub struct Scanner<'a> {
+    pub source: &'a String,
+    pub char_indices: Peekable<CharIndices<'a>>,
+    pub start: usize,
+    pub current: usize,
+    pub line: usize,
 }
 
-impl Scanner {
-    pub fn new(source: &String) -> Self {
+impl<'a> Scanner<'a> {
+    pub fn new(source: &'a String) -> Self {
         Self {
-            source: source.chars().collect::<Vec<char>>(),
+            source,
+            char_indices: source.clone().char_indices().peekable(),
             start: 0,
             current: 0,
             line: 1,
         }
     }
 
-    pub fn scan_token(&mut self) -> Token {
-        self.skip_whitespace();
-        self.start = self.current;
+    pub fn scan(&mut self) -> Vec<Token> {
+        let mut tokens: Vec<Token> = Vec::new();
 
-        if self.is_at_end() {
-            return self.make_token(TokenType::EOF)
-        };
+        while let Some((pos, c)) = self.char_indices.next() {
+            tokens.push(self.scan_token(pos, c));
+        }
 
-        let c = self.advance();
+        tokens
+    }
 
+    pub fn scan_token(&mut self, pos: usize, c: char) -> Token {
         match c {
+//            None => self.make_token(TokenType::EOF),
             // 1 character lexemes
             '(' => self.make_token(TokenType::Pal),
             ')' => self.make_token(TokenType::Par),
@@ -41,68 +47,168 @@ impl Scanner {
             '/' => self.make_token(TokenType::Fas),
             '*' => self.make_token(TokenType::Tar),
 
-            // 2 character lexemes
-            '!' => if self.mate('=') {
-                        self.make_token(TokenType::ZapTis)
-                    } else {
-                        self.make_token(TokenType::Zap)
-                    },
-            '=' => if self.mate('=') {
-                        self.make_token(TokenType::TisTis)
-                    } else {
-                        self.make_token(TokenType::Tis)
-                    },
-            '<' => if self.mate('=') {
-                        self.make_token(TokenType::GalTis)
-                    } else {
-                        self.make_token(TokenType::Gal)
-                    },
-            '>' => if self.mate('=') {
-                        self.make_token(TokenType::GarTis)
-                    } else {
-                        self.make_token(TokenType::Gar)
-                    },
+            //  Digraphs
+            '!' => {
+                match self.char_indices.next_if_eq(&(pos + 1, '=')) {
+                    Some(_tis) => self.make_token(TokenType::ZapTis),
+                    None => self.make_token(TokenType::Zap),
+                }
+            },
+            '=' => {
+                match self.char_indices.next_if_eq(&(pos + 1, '=')) {
+                    Some(_tis) => self.make_token(TokenType::TisTis),
+                    None => self.make_token(TokenType::Tis),
+                }
+            },
+            '>' => {
+                match self.char_indices.next_if_eq(&(pos + 1, '=')) {
+                    Some(_tis) => self.make_token(TokenType::GarTis),
+                    None => self.make_token(TokenType::Gar),
+                }
+            },
+            '<' => {
+                match self.char_indices.next_if_eq(&(pos + 1, '=')) {
+                    Some(_tis) => self.make_token(TokenType::GalTis),
+                    None => self.make_token(TokenType::Gal),
+                }
+            },
 
-            // literal tokens
+            _ if c.is_numeric() => {
+                let mut num = c.to_string();
+                num.push(self.char_indices
+                    .by_ref()
+                    .take_while(|(_pos, d)| {
+                        d.is_numeric()
+                    })
+                    .map(|(_pos, d)| d)
+                    .collect() as char);
+                if self.char_indices.peek() == Some('.') {
+                    self.char_indices.next(); // consumes .
+                    num.push(self.char_indices
+                        .by_ref()
+                        .take_while(|(_pos, d)| {
+                            d.is_numeric()
+                        })
+                        .map(|(_pos, d)| d)
+                        .collect() as char);
+                }
+                self.make_number_token(num)
+            }
+
+            //  Literals
             '"' => self.string(),
-
-            '0'..='9' => self.number(),
+            _ if c.is_numeric() => self.number(),
             _ if c.is_alphabetic() || c == '_' => self.identifier(),
-            _   => self.error_token("unrecognized character"),
+
+            _ => self.error_token("unrecognized character"),
         }
     }
 
-    fn advance(&mut self) -> char {
+    // pub fn scan_token(&mut self, c: char) -> Token {
+    //     self.skip_whitespace();
+    //     self.start = self.current;
+
+    //     // if self.is_at_end() {
+    //     //     return self.make_token(TokenType::EOF)
+    //     // };
+
+    //     let c = self.advance();
+
+    //     match c {
+    //         None => self.make_token(TokenType::EOF),
+    //         // 1 character lexemes
+    //         Some('(') => self.make_token(TokenType::Pal),
+    //         Some(')') => self.make_token(TokenType::Par),
+    //         Some('{') => self.make_token(TokenType::Kel),
+    //         Some('}') => self.make_token(TokenType::Ker),
+    //         Some(';') => self.make_token(TokenType::Mic),
+    //         Some(',') => self.make_token(TokenType::Com),
+    //         Some('.') => self.make_token(TokenType::Dot),
+    //         Some('-') => self.make_token(TokenType::Hep),
+    //         Some('+') => self.make_token(TokenType::Lus),
+    //         Some('/') => self.make_token(TokenType::Fas),
+    //         Some('*') => self.make_token(TokenType::Tar),
+
+    //         // 2 character lexemes
+    //         Some('!') => if self.mate('=') {
+    //                     self.make_token(TokenType::ZapTis)
+    //                 } else {
+    //                     self.make_token(TokenType::Zap)
+    //                 },
+    //         Some('=') => if self.mate('=') {
+    //                     self.make_token(TokenType::TisTis)
+    //                 } else {
+    //                     self.make_token(TokenType::Tis)
+    //                 },
+    //         Some('<') => if self.mate('=') {
+    //                     self.make_token(TokenType::GalTis)
+    //                 } else {
+    //                     self.make_token(TokenType::Gal)
+    //                 },
+    //         Some('>') => if self.mate('=') {
+    //                     self.make_token(TokenType::GarTis)
+    //                 } else {
+    //                     self.make_token(TokenType::Gar)
+    //                 },
+
+    //         // literal tokens
+    //         Some('"') => self.string(),
+    //         _ if c.unwrap().is_numeric() => self.number(),
+    //         _ if c.unwrap().is_alphabetic() || c.unwrap() == '_' => self.identifier(),
+
+    //         _ => self.error_token("unrecognized character"),
+    //     }
+    // }
+
+    fn advance(&mut self) -> Option<char> {
         self.current += 1;
-        self.source[self.current - 1]
+        self.source.chars().nth(self.current - 1)
     }
 
-    fn mate(&mut self, expected: char) -> bool {
-        if self.is_at_end() {
-            return false
-        } else if self.source[self.current] != expected {
-            return false
-        }
+    // fn mate(&mut self, expected: char) -> bool {
+    //     if self.is_at_end() {
+    //         return false
+    //     } else if self.source[self.current] != expected {
+    //         return false
+    //     }
 
-        self.current += 1;
-        true
-    }
+    //     self.current += 1;
+    //     true
+    // }
 
     fn string(&mut self) -> Token {
-        while self.peek() != '"' && !self.is_at_end() {
-            if self.peek() == '\n' {
-                self.line += 1;
-            }
-            self.advance();
+        let mut last_matched: char = '\0';
+
+        let s: String = self.char_indices
+            .by_ref()
+            .take_while(|(_pos, c)| {
+                last_matched = *c;
+                *c != '"'
+            })
+            .map(|(_pos, c)| { c })
+            .collect();
+
+        match last_matched {
+            '"' => self.make_string_token(s),
+            _   => self.error_token("Unterminated literal.")
         }
-
-        if self.is_at_end() {
-            return self.error_token("Unterminated string.")
-        };
-
-        self.advance();
-        self.make_token(TokenType::String)
     }
+
+    // fn string(&mut self) -> Token {
+    //     while self.peek() != '"' && !self.is_at_end() {
+    //         if self.peek() == '\n' {
+    //             self.line += 1;
+    //         }
+    //         self.advance();
+    //     }
+
+    //     if self.is_at_end() {
+    //         return self.error_token("Unterminated string.")
+    //     };
+
+    //     self.advance();
+    //     self.make_token(TokenType::String)
+    // }
 
     fn identifier(&mut self) -> Token {
         while self.peek().is_alphabetic() || self.peek().is_numeric() {
@@ -238,6 +344,20 @@ impl Scanner {
         Token {
             toke,
             lexeme: self.source[self.start..self.current].iter().collect(),
+            line: self.line,
+        }
+    }
+
+    fn make_string_token(&self, string: String) -> Token {
+        Token {
+            toke: TokenType::StringLiteral(string),
+            line: self.line,
+        }
+    }
+
+    fn make_number_token(&self, string: String) -> Token {
+        Token {
+            toke: TokenType::Number(string.parse::<f64>()),
             line: self.line,
         }
     }
