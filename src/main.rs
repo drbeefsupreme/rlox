@@ -42,14 +42,13 @@ fn repl(vm: &mut VM) {
     }
 }
 
-fn run_file(vm: &mut VM, path: &str) -> io::Result<InterpretResult> {
+fn run_file(vm: &mut VM, path: &str) -> io::Result<()> {
     let source = std::fs::read_to_string(path.to_string())?;
     let result = vm.interpret(&source);
 
     match result {
-        InterpretResult::CompileError => std::process::exit(65),
-        InterpretResult::RuntimeError => std::process::exit(70),
-        _ => (),
+        Err(InterpretError::Compile) => std::process::exit(65),
+        Err(InterpretError::Runtime) => std::process::exit(70),
+        Ok(_) => std::process::exit(0),
     };
-    Ok(result)
 }

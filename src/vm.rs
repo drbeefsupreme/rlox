@@ -10,10 +10,9 @@ pub struct VM {
 //    stack_top: usize,
 }
 
-pub enum InterpretResult {
-    Ok,
-    CompileError,
-    RuntimeError,
+pub enum InterpretError {
+    Compile,
+    Runtime,
 }
 
 enum BinaryOp {
@@ -44,10 +43,10 @@ impl VM {
         self.stack.pop().expect("nothing left to pop off stack")
     }
 
-    pub fn interpret(&mut self, source: &String) -> InterpretResult {
+    pub fn interpret(&mut self, source: &String) -> Result<(), InterpretError> {
         let mut compiler = Compiler::new(source);
         compiler.compile();
-        InterpretResult::Ok
+        Ok(())
     }
 
     fn reset_stack(&mut self) {
@@ -55,7 +54,7 @@ impl VM {
 //        self.stack_top = 0;
     }
 
-    fn run(&mut self, chunk: &Chunk) -> InterpretResult {
+    fn run(&mut self, chunk: &Chunk) -> Result<(), InterpretError> {
         loop {
             if cfg!(debug_assertions) {
 
@@ -71,7 +70,7 @@ impl VM {
             match instruction {
                 OpCode::Return => {
                     println!("{:?}", self.pop());
-                    return InterpretResult::Ok;
+                    return Ok(());
                 },
                 OpCode::Constant => {
                     let constant: Value = self.read_constant(chunk);
