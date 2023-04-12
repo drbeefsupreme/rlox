@@ -1,6 +1,7 @@
 use crate::chunk::*;
 use crate::value::*;
 use crate::STACK_MAX;
+use crate::compiler;
 
 pub struct VM {
 //    chunk: Chunk,
@@ -43,15 +44,14 @@ impl VM {
         self.stack.pop().expect("nothing left to pop off stack")
     }
 
+    pub fn interpret(&mut self, source: String) -> InterpretResult {
+        compiler::compile(source);
+        InterpretResult::Ok
+    }
+
     fn reset_stack(&mut self) {
         self.stack = Vec::<Value>::with_capacity(STACK_MAX);
 //        self.stack_top = 0;
-    }
-
-    pub fn interpret(&mut self, chunk: &Chunk) -> InterpretResult {
-        // self.chunk = chunk;
-        self.ip = 0;
-        self.run(chunk)
     }
 
     fn run(&mut self, chunk: &Chunk) -> InterpretResult {
