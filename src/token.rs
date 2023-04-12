@@ -1,10 +1,21 @@
+#[derive(Clone)]
 pub struct Token {
     pub toke: TokenType,
     pub lexeme: String,
     pub line: usize,
 }
 
-#[derive(Debug, PartialEq)]
+impl Default for Token {
+    fn default() -> Self {
+        Self {
+            toke: TokenType::Undefined,
+            lexeme: String::new(),
+            line: 0,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     // Single-character tokens
     Pal, Par,  // ( )
@@ -27,5 +38,8 @@ pub enum TokenType {
     Print, Return, Super, This,
     True, Var, While,
 
-    Error, EOF
+    Error, EOF,
+
+    // initial value for parser, otherwise need to use Options everywhere
+    Undefined,
 }

@@ -23,8 +23,8 @@ enum BinaryOp {
 }
 
 impl VM {
-    pub fn new() -> VM {
-        VM {
+    pub fn new() -> Self {
+        Self {
 //            chunk: Chunk::new(),
             ip: 0,
             stack: Vec::<Value>::with_capacity(STACK_MAX),
@@ -45,8 +45,10 @@ impl VM {
 
     pub fn interpret(&mut self, source: &String) -> Result<(), InterpretError> {
         let mut compiler = Compiler::new(source);
-        compiler.compile();
-        Ok(())
+        let chunk = compiler.compile()?;
+
+        self.ip = 0;
+        self.run(&chunk)
     }
 
     fn reset_stack(&mut self) {
