@@ -7,9 +7,8 @@ pub struct Scanner {
 
 pub struct Token {
     toke: TokenType,
-    start: usize,
+    lexeme: String,
     line: usize,
-    length: usize,
 }
 
 #[derive(Debug)]
@@ -53,7 +52,8 @@ pub fn compile(source: &String) {
             print!("   | ");
         }
 
-        println!("{:02?} {} {}", token.toke, token.length, token.start)
+        //TODO check this
+        println!("{:02?} {}", token.toke, token.lexeme);
     }
 }
 
@@ -76,12 +76,6 @@ impl Scanner {
         };
 
         let c = self.advance();
-        if Self::is_alpha(c) {
-            return self.identifier()
-        };
-        if Self::is_digit(c) {
-            return self.number()
-        };
 
         match c {
             // 1 character lexemes
@@ -122,7 +116,9 @@ impl Scanner {
             // literal tokens
             '"' => self.string(),
 
-            _   => self.error_token("huh".to_string()),
+            '0'..='9' => self.number(),
+            _ if c.is_alphabetic() || c == '_' => self.identifier(),
+            _   => self.error_token("unrecognized character"),
         }
     }
 
@@ -151,7 +147,7 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            return self.error_token("Unterminated string.".to_string())
+            return self.error_token("Unterminated string.")
         };
 
         self.advance();
@@ -159,7 +155,7 @@ impl Scanner {
     }
 
     fn identifier(&mut self) -> Token {
-        while Self::is_alpha(self.peek()) || Self::is_digit(self.peek()) {
+        while self.peek().is_alphabetic() || self.peek().is_numeric() {
             self.advance();
         }
         self.make_token(self.identifier_type())
@@ -222,16 +218,16 @@ impl Scanner {
     }
 
     fn number(&mut self) -> Token {
-        while Self::is_digit(self.peek()) {
+        while self.peek().is_numeric() {
             self.advance();
         }
 
         // Look for a fractional part
-        if self.peek() == '.' && Self::is_digit(self.peek_next()) {
+        if self.peek() == '.' && self.peek_next().is_numeric() {
             // Consume the "."
             self.advance();
 
-            while Self::is_digit(self.peek()) {
+            while self.peek().is_numeric() {
                 self.advance();
             }
         }
@@ -285,30 +281,16 @@ impl Scanner {
     fn make_token(&self, toke: TokenType) -> Token {
         Token {
             toke,
-            start: self.start,
-            line: self.current - self.start,
-            length: self.line,
+            lexeme: self.source[self.start..self.current].iter().collect(),
+            line: self.line,
         }
     }
 
-    fn error_token(&self, err: String) -> Token {
+    fn error_token(&self, err: &str) -> Token {
         Token {
             toke: TokenType::Error,
-            start: 0, //TODO = err???
+            lexeme: err.to_string(),
             line: self.line,
-            length: err.len(),
         }
-    }
-
-    //TODO probably a rust way to do this
-    fn is_digit(c: char) -> bool {
-        c >= '0' && c <= '9'
-    }
-
-    //TODO probably a rust way to do this
-    fn is_alpha(c: char) -> bool {
-        c >= 'a' && c <= 'z' ||
-            c >= 'A' && c <= 'Z' ||
-            c == '_'
     }
 }
