@@ -11,7 +11,7 @@ pub struct Token {
     line: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum TokenType {
     // Single-character tokens
     Pal, Par,  // ( )
@@ -54,6 +54,10 @@ pub fn compile(source: &String) {
 
         //TODO check this
         println!("{:02?} {}", token.toke, token.lexeme);
+
+        if token.toke == TokenType::EOF {
+            break;
+        }
     }
 }
 
@@ -223,7 +227,7 @@ impl Scanner {
         }
 
         // Look for a fractional part
-        if self.peek() == '.' && self.peek_next().is_numeric() {
+        if self.peek() == '.' && self.peek_next().unwrap().is_numeric() {
             // Consume the "."
             self.advance();
 
@@ -242,12 +246,12 @@ impl Scanner {
                 ' ' | '\r' | '\t' => { self.advance(); break; },
 
                 '\n' => {
-                             self.line += 1;
-                             self.advance();
-                             break;
-                         },
+                    self.line += 1;
+                    self.advance();
+                    break;
+                },
                 '/' => {
-                    if self.peek_next() == '/' {
+                    if self.peek_next().unwrap() == '/' {
                         // A comment goes until the end of the line.
                         while self.peek() != '\n' && !self.is_at_end() {
                             self.advance();
@@ -263,18 +267,24 @@ impl Scanner {
     }
 
     fn peek(&self) -> char {
-        self.source[self.current]
+        if self.is_at_end() {
+            '\0'
+        } else {
+            self.source[self.current]
+        }
     }
 
-    fn peek_next(&self) -> char {
+    fn peek_next(&self) -> Option<char> {
         if self.is_at_end() {
-            return '\0'
+            None
+        } else {
+            Some(self.source[self.current + 1])
         }
-        self.source[self.current + 1]
     }
 
     fn is_at_end(&self) -> bool {
-        self.peek() == '\0'
+        self.current == self.source.len()
+//        self.peek() == '\0'
 //        self.source.as_bytes()[self.current] == b'\0'
     }
 
