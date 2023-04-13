@@ -4,11 +4,14 @@ use crate::token::*;
 use crate::scanner::*;
 use crate::vm::InterpretError;
 use crate::chunk::*;
+use crate::value::*;
+use int_enum::IntEnum;
 
 pub struct Compiler<'a> {
     scanner: Scanner,
     parser: Parser,
     chunk: &'a mut Chunk,
+    rules: Vec<ParseRule>,
 }
 
 pub struct Parser {
@@ -16,6 +19,28 @@ pub struct Parser {
     previous: Token,
     had_error: RefCell<bool>,
     panic_mode: RefCell<bool>,
+}
+
+#[repr(usize)]
+#[derive(PartialEq, PartialOrd, Copy, Clone, IntEnum)]
+enum Precedence {
+    None = 0,
+    Assignment = 1, // =
+    Or = 2,         // or
+    And = 3,        // and
+    Equality = 4,   // == !=
+    Comparison = 5, // < > <= >=
+    Term = 6,       // + -
+    Factor = 7,     // * /
+    Unary = 8,      // ! -
+    Call = 9,       // . ()
+    Primary = 10,
+}
+
+struct ParseRule {
+    prefix: Option<fn(&mut Compiler)>,
+    infix: Option<fn(&mut Compiler)>,
+    precedence: Precedence,
 }
 
 impl Parser {
@@ -35,6 +60,7 @@ impl<'a> Compiler<'a> {
             scanner: Scanner::new(source),
             parser: Parser::new(),
             chunk,
+            rules: Self::build_parse_rule_table(),
         }
     }
 
@@ -94,7 +120,9 @@ impl<'a> Compiler<'a> {
         self.error_at(&self.parser.previous, msg);
     }
 
-    fn expression(&self) {}
+    fn expression(&self) {
+        self.parse_precedence(Precedence::Assignment);
+    }
 
     fn consume(&mut self, toke: TokenType, msg: &str) {
         if self.parser.current.toke == toke {
@@ -103,10 +131,6 @@ impl<'a> Compiler<'a> {
         }
 
         self.error_at_current(msg);
-    }
-
-    fn current_chunk(&mut self) -> &mut Chunk {
-        &mut self.chunk
     }
 
     fn emit_byte(&mut self, byte: u8) {
@@ -122,7 +146,119 @@ impl<'a> Compiler<'a> {
         self.emit_byte(OpCode::Return.into());
     }
 
+    fn make_constant(&mut self, value: Value) -> Option<u8> {
+        let constant = self.chunk.write_constant(value);
+        if constant > std::u8::MAX as usize {
+            eprintln!("Too many constants in one chunk.");
+            return None;
+        };
+
+        Some(constant as u8)
+    }
+
+    fn emit_constant(&mut self, value: Value) {
+        let con = self.make_constant(value);
+        match con {
+            Some(c) => self.emit_bytes(OpCode::Constant.into(), c),
+            None => panic!("emit_constant failed"), // is panic the right thing here?
+        }
+    }
+
     fn end_compiler(&mut self) {
         self.emit_return();
+    }
+
+    fn binary(&mut self) {
+        let operator_type = &self.parser.previous.toke;
+        let rule = self.get_rule(operator_type);
+//TODO        self.parse_precedence(precedence)
+
+        match *operator_type {
+            TokenType::Lus => self.emit_byte(OpCode::Add.into()),
+            TokenType::Hep => self.emit_byte(OpCode::Sub.into()),
+            TokenType::Tar => self.emit_byte(OpCode::Mul.into()),
+            TokenType::Fas => self.emit_byte(OpCode::Div.into()),
+            _ => return,
+        }
+    }
+
+    fn grouping(&mut self) {
+        self.expression();
+        self.consume(TokenType::Par, "Expect ')' after expression.");
+    }
+
+    fn number(&mut self) {
+        //TODO clone lexeme?
+        let value = Value::Number(self.parser.previous.lexeme.parse().unwrap());
+        self.emit_constant(value);
+    }
+
+    fn unary(&mut self) {
+        let operator_type = &self.parser.previous.toke;
+
+        // Compile the operand
+        self.parse_precedence(Precedence::Unary);
+
+        // Emit the operator instruction
+        match operator_type {
+            TokenType::Hep => self.emit_byte(OpCode::Negate.into()),
+            _ => return,
+        }
+    }
+
+    fn parse_precedence(&self, precedence: Precedence) {
+        //
+    }
+
+    fn get_rule(&self, toke: TokenType) -> ParseRule {
+        self.rules[toke.int_value()]
+    }
+
+    fn build_parse_rule_table() -> Vec<ParseRule> {
+        let mut rules: Vec<ParseRule> = vec!
+            [ ParseRule {
+                prefix: None,
+                infix: None,
+                precedence: Precedence::None,
+            }; TokenType::NumberOfTokens.int_value()];
+
+        rules[TokenType::Pal.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.grouping()),
+                infix: None,
+                precedence: Precedence::None,
+            };
+        rules[TokenType::Hep.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.unary()),
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Term,
+            };
+        rules[TokenType::Lus.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Term,
+            };
+        rules[TokenType::Fas.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Factor,
+            };
+        rules[TokenType::Tar.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Factor,
+            };
+        rules[TokenType::Number.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.number()),
+                infix: None,
+                precedence: Precedence::None,
+            };
+
+        rules
     }
 }
