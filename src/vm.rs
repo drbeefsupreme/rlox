@@ -49,7 +49,10 @@ impl VM {
         compiler.compile()?;
 
         self.ip = 0;
-        self.run(&chunk)
+        let result = self.run(&chunk);
+        chunk.free();
+
+        result
     }
 
     fn reset_stack(&mut self) {

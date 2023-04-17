@@ -1,6 +1,6 @@
 use int_enum::IntEnum;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Token {
     pub toke: TokenType,
     pub lexeme: String,

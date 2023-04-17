@@ -22,6 +22,7 @@ impl Scanner {
         self.start = self.current;
 
         if self.is_at_end() {
+            println!("EOF token");
             return self.make_token(TokenType::EOF)
         };
 
@@ -105,7 +106,7 @@ impl Scanner {
     }
 
     fn identifier(&mut self) -> Token {
-        while self.peek().is_alphabetic() || self.peek().is_numeric() {
+        while self.peek().is_alphabetic() || self.peek().is_digit(10) {
             self.advance();
         }
         self.make_token(self.identifier_type())
@@ -168,16 +169,16 @@ impl Scanner {
     }
 
     fn number(&mut self) -> Token {
-        while self.peek().is_numeric() {
+        while self.peek().is_digit(10) {
             self.advance();
         }
 
         // Look for a fractional part
-        if self.peek() == '.' && self.peek_next().unwrap().is_numeric() {
+        if self.peek() == '.' && self.peek_next().unwrap().is_digit(10) {
             // Consume the "."
             self.advance();
 
-            while self.peek().is_numeric() {
+            while self.peek().is_digit(10) {
                 self.advance();
             }
         }
@@ -229,17 +230,21 @@ impl Scanner {
     }
 
     fn is_at_end(&self) -> bool {
-        self.current == self.source.len()
+        let res = self.current == self.source.len();
+        println!("is_at_end {res}");
+        res
 //        self.peek() == '\0'
 //        self.source.as_bytes()[self.current] == b'\0'
     }
 
     fn make_token(&self, toke: TokenType) -> Token {
-        Token {
+        let tok = Token {
             toke,
             lexeme: self.source[self.start..self.current].iter().collect(),
             line: self.line,
-        }
+        };
+        println!("{:?}", tok);
+        tok
     }
 
     fn error_token(&self, err: &str) -> Token {

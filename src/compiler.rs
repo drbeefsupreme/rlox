@@ -24,19 +24,29 @@ pub struct Parser {
 #[repr(usize)]
 #[derive(PartialEq, PartialOrd, Copy, Clone, IntEnum)]
 enum Precedence {
-    None = 0,
+    None       = 0,
     Assignment = 1, // =
-    Or = 2,         // or
-    And = 3,        // and
-    Equality = 4,   // == !=
+    Or         = 2, // or
+    And        = 3, // and
+    Equality   = 4, // == !=
     Comparison = 5, // < > <= >=
-    Term = 6,       // + -
-    Factor = 7,     // * /
-    Unary = 8,      // ! -
-    Call = 9,       // . ()
-    Primary = 10,
+    Term       = 6, // + -
+    Factor     = 7, // * /
+    Unary      = 8, // ! -
+    Call       = 9, // . ()
+    Primary    = 10,
 }
 
+impl Precedence {
+    fn next(self) -> Self {
+        if self == Precedence::Primary {
+            panic!("no next() after Primary");
+        }
+        Self::from_int(self.int_value() + 1).unwrap()
+    }
+}
+
+#[derive(Copy, Clone)]
 struct ParseRule {
     prefix: Option<fn(&mut Compiler)>,
     infix: Option<fn(&mut Compiler)>,
@@ -120,7 +130,7 @@ impl<'a> Compiler<'a> {
         self.error_at(&self.parser.previous, msg);
     }
 
-    fn expression(&self) {
+    fn expression(&mut self) {
         self.parse_precedence(Precedence::Assignment);
     }
 
@@ -165,15 +175,20 @@ impl<'a> Compiler<'a> {
     }
 
     fn end_compiler(&mut self) {
+        if cfg!(debug_assertions) && !*self.parser.had_error.borrow() {
+            self.chunk.disassemble("code");
+        }
+
         self.emit_return();
     }
 
     fn binary(&mut self) {
-        let operator_type = &self.parser.previous.toke;
-        let rule = self.get_rule(operator_type);
-//TODO        self.parse_precedence(precedence)
+        let operator_type = self.parser.previous.toke;
+        let rule = self.get_rule(operator_type).unwrap().precedence.next();
 
-        match *operator_type {
+        self.parse_precedence(rule);
+
+        match operator_type {
             TokenType::Lus => self.emit_byte(OpCode::Add.into()),
             TokenType::Hep => self.emit_byte(OpCode::Sub.into()),
             TokenType::Tar => self.emit_byte(OpCode::Mul.into()),
@@ -194,7 +209,7 @@ impl<'a> Compiler<'a> {
     }
 
     fn unary(&mut self) {
-        let operator_type = &self.parser.previous.toke;
+        let operator_type = self.parser.previous.toke;
 
         // Compile the operand
         self.parse_precedence(Precedence::Unary);
@@ -206,12 +221,29 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn parse_precedence(&self, precedence: Precedence) {
-        //
+    fn parse_precedence(&mut self, precedence: Precedence) {
+        self.advance();
+        if let Some(prefix_rule) = self.rules[self.parser.previous.toke.int_value()].prefix {
+            prefix_rule(self);
+
+            while precedence <= self.rules[self.parser.current.toke.int_value()].precedence {
+                self.advance();
+
+                if let Some(infix_rule) = self.rules[self.parser.previous.toke.int_value()].infix {
+                    infix_rule(self);
+                }
+            }
+        } else {
+            self.error("Expect expression.");
+        }
     }
 
-    fn get_rule(&self, toke: TokenType) -> ParseRule {
-        self.rules[toke.int_value()]
+    fn get_rule(&self, toke: TokenType) -> Option<ParseRule> {
+        if self.rules.get(toke.int_value()).is_none() {
+            None
+        } else {
+            Some(self.rules[toke.int_value()])
+        }
     }
 
     fn build_parse_rule_table() -> Vec<ParseRule> {
