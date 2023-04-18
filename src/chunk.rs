@@ -12,6 +12,7 @@ pub enum OpCode {
     Sub = 7,
     Mul = 8,
     Div = 9,
+    Not = 10,
 }
 
 #[derive(Debug)]
@@ -90,6 +91,7 @@ impl Chunk {
             OpCode::Nil      => self.simple_instruction("OP_NIL", offset),
             OpCode::True     => self.simple_instruction("OP_TRUE", offset),
             OpCode::False    => self.simple_instruction("OP_FALSE", offset),
+            OpCode::Not      => self.simple_instruction("OP_NOT", offset),
         }
     }
 
@@ -122,6 +124,7 @@ impl From<u8> for OpCode {
             7 => OpCode::Sub,
             8 => OpCode::Mul,
             9 => OpCode::Div,
+            10 => OpCode::Not,
             _ => unimplemented!("Invalid OpCode"),
         }
     }

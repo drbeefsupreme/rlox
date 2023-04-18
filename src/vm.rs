@@ -114,6 +114,10 @@ impl VM {
                 OpCode::Nil   => self.push(Value::Nil),
                 OpCode::True  => self.push(Value::Bool(true)),
                 OpCode::False => self.push(Value::Bool(false)),
+                OpCode::Not   => {
+                    let value = self.pop();
+                    self.push(Value::Bool(value.is_falsey()));
+                },
             }
         }
     }

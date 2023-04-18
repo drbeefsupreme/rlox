@@ -227,6 +227,7 @@ impl<'a> Compiler<'a> {
         // Emit the operator instruction
         match operator_type {
             TokenType::Hep => self.emit_byte(OpCode::Negate.into()),
+            TokenType::Zap => self.emit_byte(OpCode::Not.into()),
             _ => return,
         }
     }
@@ -318,7 +319,12 @@ impl<'a> Compiler<'a> {
                 infix: None,
                 precedence: Precedence::None,
             };
-
+        rules[TokenType::Zap.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.unary()),
+                infix: None,
+                precedence: Precedence::None,
+            };
 
         rules
     }
