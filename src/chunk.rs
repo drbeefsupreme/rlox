@@ -43,7 +43,7 @@ impl Chunk {
         self.code[ip]
     }
 
-    pub fn read_constant(&self, i: usize) -> Value {
+    pub fn read_constant(&self, i: usize) -> &Value {
         self.constants.read_value(i)
     }
 

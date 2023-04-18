@@ -25,16 +25,17 @@ impl ValueArray {
         print!("{}", self.values[which]);
     }
 
-    pub fn read_value(&self, which: usize) -> Value {
-        self.values[which]
+    pub fn read_value(&self, which: usize) -> &Value {
+        &self.values[which]
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum Value {
     Number(f64),
     Bool(bool),
     Nil,
+    Str(String),
 }
 
 impl Value {
@@ -51,12 +52,24 @@ impl Value {
     }
 }
 
+impl Clone for Value {
+    fn clone(&self) -> Self {
+        match self {
+            Value::Number(n) => Value::Number(*n),
+            Value::Bool(b)   => Value::Bool(*b),
+            Value::Nil       => Value::Nil,
+            Value::Str(s)    => Value::Str(s.clone()),
+        }
+    }
+}
+
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> Result<(), std::fmt::Error> {
         match self {
             Value::Bool(b) => write!(f, "{b}"),
             Value::Number(n) => write!(f, "{n}"),
             Value::Nil => write!(f, "nil"),
+            Value::Str(s) => write!(f, "{s}"),
         }
     }
 }

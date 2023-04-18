@@ -22,7 +22,6 @@ impl Scanner {
         self.start = self.current;
 
         if self.is_at_end() {
-            println!("EOF token");
             return self.make_token(TokenType::EOF)
         };
 
@@ -231,7 +230,6 @@ impl Scanner {
 
     fn is_at_end(&self) -> bool {
         let res = self.current == self.source.len();
-        println!("is_at_end {res}");
         res
 //        self.peek() == '\0'
 //        self.source.as_bytes()[self.current] == b'\0'
@@ -243,7 +241,6 @@ impl Scanner {
             lexeme: self.source[self.start..self.current].iter().collect(),
             line: self.line,
         };
-        println!("{:?}", tok);
         tok
     }
 

@@ -226,6 +226,12 @@ impl<'a> Compiler<'a> {
         self.emit_constant(value);
     }
 
+    fn string(&mut self) {
+        let len = self.parser.previous.lexeme.len() - 1;
+        let value = Value::Str(self.parser.previous.lexeme[1..len].to_string());
+        self.emit_constant(value);
+    }
+
     fn unary(&mut self) {
         let operator_type = self.parser.previous.toke;
 
@@ -368,6 +374,12 @@ impl<'a> Compiler<'a> {
                 prefix: None,
                 infix: Some(|c| c.binary()),
                 precedence: Precedence::Comparison,
+            };
+        rules[TokenType::String.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.string()),
+                infix: None,
+                precedence: Precedence::None,
             };
 
         rules

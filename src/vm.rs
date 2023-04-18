@@ -45,8 +45,8 @@ impl VM {
         self.stack.pop().expect("nothing left to pop off stack")
     }
 
-    fn peek(&self, distance: usize) -> Value {
-        self.stack[self.stack.len() - distance - 1]
+    fn peek(&self, distance: usize) -> &Value {
+        &self.stack[self.stack.len() - distance - 1]
     }
 
     pub fn interpret(&mut self, source: &String) -> Result<(), InterpretError> {
@@ -98,7 +98,9 @@ impl VM {
                     return Ok(());
                 },
                 OpCode::Constant => {
-                    let constant: Value = self.read_constant(chunk);
+                    // ended up cloning here after peppering & around the call stack leading to this,
+                    // not sure if its the right choice? I think it might be, though
+                    let constant: Value = self.read_constant(chunk).clone();
                     self.push(constant);
                 },
                 OpCode::Negate => {
@@ -136,8 +138,8 @@ impl VM {
         op
     }
 
-    fn read_constant(&mut self, chunk: &Chunk) -> Value {
-        let val: Value = chunk.read_constant(chunk.read_code(self.ip) as usize);
+    fn read_constant<'a>(&'a mut self, chunk: &'a Chunk) -> &Value {
+        let val: &Value = chunk.read_constant(chunk.read_code(self.ip) as usize);
         self.ip += 1;
         val
     }
