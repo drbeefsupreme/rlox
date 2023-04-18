@@ -4,11 +4,14 @@ use crate::value::*;
 pub enum OpCode {
     Return = 0,
     Constant = 1,
-    Negate = 2,
-    Add = 3,
-    Sub = 4,
-    Mul = 5,
-    Div = 6,
+    Nil = 2,
+    True = 3,
+    False = 4,
+    Negate = 5,
+    Add = 6,
+    Sub = 7,
+    Mul = 8,
+    Div = 9,
 }
 
 #[derive(Debug)]
@@ -84,6 +87,9 @@ impl Chunk {
             OpCode::Sub      => self.simple_instruction("OP_SUBTRACT", offset),
             OpCode::Mul      => self.simple_instruction("OP_MULTIPLY", offset),
             OpCode::Div      => self.simple_instruction("OP_DIVIDE", offset),
+            OpCode::Nil      => self.simple_instruction("OP_NIL", offset),
+            OpCode::True     => self.simple_instruction("OP_TRUE", offset),
+            OpCode::False    => self.simple_instruction("OP_FALSE", offset),
         }
     }
 
@@ -108,11 +114,14 @@ impl From<u8> for OpCode {
         match code {
             0 => OpCode::Return,
             1 => OpCode::Constant,
-            2 => OpCode::Negate,
-            3 => OpCode::Add,
-            4 => OpCode::Sub,
-            5 => OpCode::Mul,
-            6 => OpCode::Div,
+            2 => OpCode::Nil,
+            3 => OpCode::True,
+            4 => OpCode::False,
+            5 => OpCode::Negate,
+            6 => OpCode::Add,
+            7 => OpCode::Sub,
+            8 => OpCode::Mul,
+            9 => OpCode::Div,
             _ => unimplemented!("Invalid OpCode"),
         }
     }

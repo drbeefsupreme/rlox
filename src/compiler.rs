@@ -197,6 +197,16 @@ impl<'a> Compiler<'a> {
         }
     }
 
+    fn literal(&mut self) {
+        let toke = self.parser.previous.toke;
+        match toke {
+            TokenType::False => self.emit_byte(OpCode::False.into()),
+            TokenType::Nil   => self.emit_byte(OpCode::Nil.into()),
+            TokenType::True  => self.emit_byte(OpCode::True.into()),
+            _                => panic!("Invalid literal"),
+        }
+    }
+
     fn grouping(&mut self) {
         self.expression();
         self.consume(TokenType::Par, "Expect ')' after expression.");
@@ -290,6 +300,25 @@ impl<'a> Compiler<'a> {
                 infix: None,
                 precedence: Precedence::None,
             };
+        rules[TokenType::False.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.literal()),
+                infix: None,
+                precedence: Precedence::None,
+            };
+        rules[TokenType::True.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.literal()),
+                infix: None,
+                precedence: Precedence::None,
+            };
+        rules[TokenType::Nil.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.literal()),
+                infix: None,
+                precedence: Precedence::None,
+            };
+
 
         rules
     }

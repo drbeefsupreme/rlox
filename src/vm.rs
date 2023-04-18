@@ -107,10 +107,13 @@ impl VM {
                     let value = self.pop();
                     self.push(-value);
                 },
-                OpCode::Add => self.binary_op(BinaryOp::Add),
-                OpCode::Sub => self.binary_op(BinaryOp::Sub),
-                OpCode::Mul => self.binary_op(BinaryOp::Mul),
-                OpCode::Div => self.binary_op(BinaryOp::Div),
+                OpCode::Add   => self.binary_op(BinaryOp::Add),
+                OpCode::Sub   => self.binary_op(BinaryOp::Sub),
+                OpCode::Mul   => self.binary_op(BinaryOp::Mul),
+                OpCode::Div   => self.binary_op(BinaryOp::Div),
+                OpCode::Nil   => self.push(Value::Nil),
+                OpCode::True  => self.push(Value::Bool(true)),
+                OpCode::False => self.push(Value::Bool(false)),
             }
         }
     }
