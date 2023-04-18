@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Debug)]
 pub struct ValueArray {
@@ -36,12 +37,77 @@ pub enum Value {
     Nil,
 }
 
+impl Value {
+    pub fn is_number(&self) -> bool {
+        if let Value::Number(_) = self {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> Result<(), std::fmt::Error> {
         match self {
             Value::Bool(b) => write!(f, "{b}"),
             Value::Number(n) => write!(f, "{n}"),
             Value::Nil => write!(f, "nil"),
+        }
+    }
+}
+
+impl Add for Value {
+    type Output = Value;
+
+    fn add(self, other: Value) -> Value {
+        match (self, other) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
+            _ => panic!("invalid operation"),
+        }
+    }
+}
+
+impl Sub for Value {
+    type Output = Value;
+
+    fn sub(self, other: Value) -> Value {
+        match (self, other) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a - b),
+            _ => panic!("invalid operation"),
+        }
+    }
+}
+
+impl Mul for Value {
+    type Output = Value;
+
+    fn mul(self, other: Value) -> Value {
+        match (self, other) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a * b),
+            _ => panic!("invalid operation"),
+        }
+    }
+}
+
+impl Div for Value {
+    type Output = Value;
+
+    fn div(self, other: Value) -> Value {
+        match (self, other) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a / b),
+            _ => panic!("invalid operation"),
+        }
+    }
+}
+
+impl Neg for Value {
+    type Output = Value;
+
+    fn neg(self) -> Value {
+        match self {
+            Value::Number(a) => Value::Number(-a),
+            _ => panic!("invalid operation"),
         }
     }
 }
