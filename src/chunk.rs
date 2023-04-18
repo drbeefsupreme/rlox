@@ -44,6 +44,10 @@ impl Chunk {
         self.constants.write(value)
     }
 
+    pub fn get_line(&self, ip: usize) -> usize {
+        self.lines[ip]
+    }
+
     pub fn free(&mut self) {
         // might be unnecessary
         self.code = Vec::<u8>::new();

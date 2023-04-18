@@ -39,8 +39,12 @@ impl VM {
         self.stack.push(value);
     }
 
-    pub fn pop(&mut self) -> Value {
+    fn pop(&mut self) -> Value {
         self.stack.pop().expect("nothing left to pop off stack")
+    }
+
+    fn peek(&self, distance: usize) -> Value {
+        self.stack[self.stack.len() - distance - 1]
     }
 
     pub fn interpret(&mut self, source: &String) -> Result<(), InterpretError> {
@@ -58,6 +62,19 @@ impl VM {
     fn reset_stack(&mut self) {
         self.stack = Vec::<Value>::with_capacity(STACK_MAX);
 //        self.stack_top = 0;
+    }
+
+    fn runtime_error<T: ToString> (
+        &mut self,
+        chunk: &Chunk,
+        msg: &T,
+    ) -> Result<(), InterpretError> {
+        let line = chunk.get_line(self.ip - 1);
+        eprintln!("{}", msg.to_string());
+        eprintln!("[line {line}] in script");
+        self.reset_stack();
+
+        Err(InterpretError::Runtime)
     }
 
     fn run(&mut self, chunk: &Chunk) -> Result<(), InterpretError> {
@@ -83,9 +100,12 @@ impl VM {
                     self.push(constant);
                 },
                 OpCode::Negate => {
-                    if let Value::Number(f) = self.pop() {
-                        self.push(Value::Number(-f));
+                    if !self.peek(0).is_number() {
+                        return self.runtime_error(chunk, &"Operand must be a number.");
                     }
+
+                    let value = self.pop();
+                    self.push(-value);
                 },
                 OpCode::Add => self.binary_op(BinaryOp::Add),
                 OpCode::Sub => self.binary_op(BinaryOp::Sub),
@@ -108,14 +128,21 @@ impl VM {
     }
 
     fn binary_op(&mut self, op: BinaryOp) {
-        // might need a while loop here, 15.2
-        if let (Value::Number(b), Value::Number(a)) = (self.pop(), self.pop()) {
-            match op {
-                BinaryOp::Add => self.push(Value::Number(a + b)),
-                BinaryOp::Sub => self.push(Value::Number(a - b)),
-                BinaryOp::Mul => self.push(Value::Number(a * b)),
-                BinaryOp::Div => self.push(Value::Number(a / b)),
-            };
+        let (b, a) = (self.pop(), self.pop());
+        match op {
+            BinaryOp::Add => self.push(a + b),
+            BinaryOp::Sub => self.push(a - b),
+            BinaryOp::Mul => self.push(a * b),
+            BinaryOp::Div => self.push(a / b),
         }
+        // might need a while loop here, 15.2
+        // if let (Value::Number(b), Value::Number(a)) = (self.pop(), self.pop()) {
+        //     match op {
+        //         BinaryOp::Add => self.push(Value::Number(a + b)),
+        //         BinaryOp::Sub => self.push(Value::Number(a - b)),
+        //         BinaryOp::Mul => self.push(Value::Number(a * b)),
+        //         BinaryOp::Div => self.push(Value::Number(a / b)),
+        //     };
+        // }
     }
 }
