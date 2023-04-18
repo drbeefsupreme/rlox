@@ -189,11 +189,19 @@ impl<'a> Compiler<'a> {
         self.parse_precedence(rule);
 
         match operator_type {
+            TokenType::ZapTis => self.emit_bytes(OpCode::Equal.into(), OpCode::Not.into()),
+            TokenType::TisTis => self.emit_byte(OpCode::Equal.into()),
+            TokenType::Gar    => self.emit_byte(OpCode::Greater.into()),
+            TokenType::GarTis => self.emit_bytes(OpCode::Less.into(), OpCode::Not.into()),
+            TokenType::Gal    => self.emit_byte(OpCode::Less.into()),
+            TokenType::GalTis => self.emit_bytes(OpCode::Greater.into(), OpCode::Not.into()),
+
             TokenType::Lus => self.emit_byte(OpCode::Add.into()),
             TokenType::Hep => self.emit_byte(OpCode::Sub.into()),
             TokenType::Tar => self.emit_byte(OpCode::Mul.into()),
             TokenType::Fas => self.emit_byte(OpCode::Div.into()),
-            _ => return,
+
+           _ => return,
         }
     }
 
@@ -324,6 +332,42 @@ impl<'a> Compiler<'a> {
                 prefix: Some(|c| c.unary()),
                 infix: None,
                 precedence: Precedence::None,
+            };
+        rules[TokenType::ZapTis.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Equality,
+            };
+        rules[TokenType::TisTis.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Equality,
+            };
+        rules[TokenType::Gar.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Comparison,
+            };
+        rules[TokenType::GarTis.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Comparison,
+            };
+        rules[TokenType::Gal.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Comparison,
+            };
+        rules[TokenType::GalTis.int_value()] =
+            ParseRule {
+                prefix: None,
+                infix: Some(|c| c.binary()),
+                precedence: Precedence::Comparison,
             };
 
         rules

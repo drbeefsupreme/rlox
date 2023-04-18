@@ -20,6 +20,8 @@ enum BinaryOp {
     Sub,
     Mul,
     Div,
+    Less,
+    Greater,
 }
 
 impl VM {
@@ -114,10 +116,16 @@ impl VM {
                 OpCode::Nil   => self.push(Value::Nil),
                 OpCode::True  => self.push(Value::Bool(true)),
                 OpCode::False => self.push(Value::Bool(false)),
+                OpCode::Equal => {
+                    let (b, a) = (self.pop(), self.pop());
+                    self.push(Value::Bool(b == a));
+                }
                 OpCode::Not   => {
                     let value = self.pop();
                     self.push(Value::Bool(value.is_falsey()));
                 },
+                OpCode::Greater => self.binary_op(BinaryOp::Greater),
+                OpCode::Less    => self.binary_op(BinaryOp::Less),
             }
         }
     }
@@ -141,6 +149,8 @@ impl VM {
             BinaryOp::Sub => self.push(a - b),
             BinaryOp::Mul => self.push(a * b),
             BinaryOp::Div => self.push(a / b),
+            BinaryOp::Less => self.push(Value::Bool(a < b)),
+            BinaryOp::Greater => self.push(Value::Bool(a > b)),
         }
         // might need a while loop here, 15.2
         // if let (Value::Number(b), Value::Number(a)) = (self.pop(), self.pop()) {

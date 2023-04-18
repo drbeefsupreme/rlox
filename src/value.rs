@@ -30,7 +30,7 @@ impl ValueArray {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Value {
     Number(f64),
     Bool(bool),
