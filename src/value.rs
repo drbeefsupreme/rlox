@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 #[derive(Debug)]
 pub struct ValueArray {
     values: Vec<Value>,
@@ -19,7 +21,7 @@ impl ValueArray {
     }
 
     pub fn print_value(&self, which: usize) {
-        print!("{:?}", self.values[which]);
+        print!("{}", self.values[which]);
     }
 
     pub fn read_value(&self, which: usize) -> Value {
@@ -34,8 +36,12 @@ pub enum Value {
     Nil,
 }
 
-impl Value {
-    pub fn print(&self) {
-        print!("{:?}", self);
+impl Display for Value {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), std::fmt::Error> {
+        match self {
+            Value::Bool(b) => write!(f, "{b}"),
+            Value::Number(n) => write!(f, "{n}"),
+            Value::Nil => write!(f, "nil"),
+        }
     }
 }
