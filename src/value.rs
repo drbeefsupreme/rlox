@@ -12,6 +12,17 @@ impl ValueArray {
     }
 
     pub fn write(&mut self, value: Value) -> usize {
+        // String interning
+        if let Value::Str(s) = &value {
+            for (i, v) in self.values.iter().enumerate() {
+                if let Value::Str(t) = v {
+                    if t == s {
+                        return i;
+                    }
+                }
+            }
+        }
+
         let count = self.values.len();
         self.values.push(value);
         count
