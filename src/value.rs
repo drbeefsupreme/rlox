@@ -80,7 +80,8 @@ impl Add for Value {
     fn add(self, other: Value) -> Value {
         match (self, other) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
-            _ => panic!("invalid operation"),
+            (Value::Str(a), Value::Str(b)) => Value::Str(a + &b),
+            _ => panic!("Operands must be two numbers or two strings"),
         }
     }
 }
@@ -91,7 +92,7 @@ impl Sub for Value {
     fn sub(self, other: Value) -> Value {
         match (self, other) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a - b),
-            _ => panic!("invalid operation"),
+            _ => panic!("Operands must be two numbers"),
         }
     }
 }
@@ -102,7 +103,7 @@ impl Mul for Value {
     fn mul(self, other: Value) -> Value {
         match (self, other) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a * b),
-            _ => panic!("invalid operation"),
+            _ => panic!("Operands must be two numbers"),
         }
     }
 }
@@ -113,7 +114,7 @@ impl Div for Value {
     fn div(self, other: Value) -> Value {
         match (self, other) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a / b),
-            _ => panic!("invalid operation"),
+            _ => panic!("Operands must be two numbers"),
         }
     }
 }
@@ -124,7 +125,7 @@ impl Neg for Value {
     fn neg(self) -> Value {
         match self {
             Value::Number(a) => Value::Number(-a),
-            _ => panic!("invalid operation"),
+            _ => panic!("Operand must be a number"),
         }
     }
 }
