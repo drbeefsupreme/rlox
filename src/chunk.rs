@@ -11,11 +11,12 @@ pub enum OpCode {
     Greater = 6,
     Less = 7,
     Negate = 8,
-    Add = 9,
-    Sub = 10,
-    Mul = 11,
-    Div = 12,
-    Not = 13,
+    Print = 9,
+    Add = 10,
+    Sub = 11,
+    Mul = 12,
+    Div = 13,
+    Not = 14,
 }
 
 #[derive(Debug)]
@@ -98,6 +99,7 @@ impl Chunk {
             OpCode::Equal    => self.simple_instruction("OP_EQUAL", offset),
             OpCode::Greater  => self.simple_instruction("OP_GREATER", offset),
             OpCode::Less     => self.simple_instruction("OP_LESS", offset),
+            OpCode::Print    => self.simple_instruction("OP_PRINT", offset),
         }
     }
 
@@ -129,11 +131,12 @@ impl From<u8> for OpCode {
             6 => OpCode::Greater,
             7 => OpCode::Less,
             8 => OpCode::Negate,
-            9 => OpCode::Add,
-            10 => OpCode::Sub,
-            11 => OpCode::Mul,
-            12 => OpCode::Div,
-            13 => OpCode::Not,
+            9 => OpCode::Print,
+            10 => OpCode::Add,
+            11 => OpCode::Sub,
+            12 => OpCode::Mul,
+            13 => OpCode::Div,
+            14 => OpCode::Not,
             _ => unimplemented!("Invalid OpCode"),
         }
     }

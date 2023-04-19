@@ -94,7 +94,8 @@ impl VM {
             let instruction = self.read_byte(chunk);
             match instruction {
                 OpCode::Return => {
-                    println!("{:?}", self.pop());
+                    //println!("{:?}", self.pop());
+                    // Exit interpreter.
                     return Ok(());
                 },
                 OpCode::Constant => {
@@ -128,6 +129,10 @@ impl VM {
                 },
                 OpCode::Greater => self.binary_op(BinaryOp::Greater),
                 OpCode::Less    => self.binary_op(BinaryOp::Less),
+                OpCode::Print   => {
+                    let value = self.pop();
+                    println!("{}\n", value);
+                }
             }
         }
     }

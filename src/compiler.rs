@@ -76,8 +76,12 @@ impl<'a> Compiler<'a> {
 
     pub fn compile(&mut self) -> Result<(), InterpretError> {
         self.advance();
-        self.expression();
-        self.consume(TokenType::EOF, "Expect end of expression");
+        // self.expression();
+        // self.consume(TokenType::EOF, "Expect end of expression");
+
+        while !self.mate(TokenType::EOF) {
+            self.declaration();
+        }
 
         self.end_compiler();
 
@@ -134,6 +138,22 @@ impl<'a> Compiler<'a> {
         self.parse_precedence(Precedence::Assignment);
     }
 
+    fn print_statement(&mut self) {
+        self.expression();
+        self.consume(TokenType::Mic, "Expect ';' after value.");
+        self.emit_byte(OpCode::Print.into());
+    }
+
+    fn declaration(&mut self) {
+        self.statement();
+    }
+
+    fn statement(&mut self) {
+        if self.mate(TokenType::Print) {
+            self.print_statement();
+        }
+    }
+
     fn consume(&mut self, toke: TokenType, msg: &str) {
         if self.parser.current.toke == toke {
             self.advance();
@@ -141,6 +161,18 @@ impl<'a> Compiler<'a> {
         }
 
         self.error_at_current(msg);
+    }
+
+    fn check(&self, toke: TokenType) -> bool {
+        self.parser.current.toke == toke
+    }
+
+    fn mate(&mut self, toke: TokenType) -> bool {
+        if !self.check(toke) {
+            return false;
+        }
+        self.advance();
+        true
     }
 
     fn emit_byte(&mut self, byte: u8) {
@@ -384,4 +416,5 @@ impl<'a> Compiler<'a> {
 
         rules
     }
+
 }
