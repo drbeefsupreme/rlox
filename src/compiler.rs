@@ -139,6 +139,21 @@ impl<'a> Compiler<'a> {
         self.parse_precedence(Precedence::Assignment);
     }
 
+    fn var_declaration(&mut self) {
+        let global = self.parse_variable("Expect variable name.");
+
+        if self.mate(TokenType::Tis) {
+            self.expression();
+        } else {
+            // Desugars `var a;` into `var a = nil;`
+            self.emit_byte(OpCode::Nil.into());
+        }
+
+        self.consume(TokenType::Mic,
+                     "Expect ';' after variable declaration.");
+        self.define_variable(global);
+    }
+
     fn expression_statement(&mut self) {
         self.expression();
         self.consume(TokenType::Mic, "Expect ';' after expression.");
@@ -169,7 +184,11 @@ impl<'a> Compiler<'a> {
     }
 
     fn declaration(&mut self) {
-        self.statement();
+        if self.mate(TokenType::Var) {
+            self.var_declaration();
+        } else {
+            self.statement();
+        }
 
         if *self.parser.panic_mode.borrow() {
             self.synchronize();
@@ -323,6 +342,23 @@ impl<'a> Compiler<'a> {
         } else {
             self.error("Expect expression.");
         }
+    }
+
+    fn identifier_constant(&mut self, lex: String) -> Option<u8> {
+        self.make_constant(Value::Str(lex))
+    }
+
+    fn parse_variable(&mut self, msg: &str) -> u8 {
+        //TODO the error should probably be threaded through differently - i think i'm
+        // mixing up C and Rust conventions here
+        self.consume(TokenType::Identifier, msg);
+
+        //TODO do i clone here?
+        self.identifier_constant(self.parser.previous.lexeme.clone()).expect(msg)
+    }
+
+    fn define_variable(&mut self, global: u8) {
+        self.emit_bytes(OpCode::DefineGlobal.into(), global);
     }
 
     fn get_rule(&self, toke: TokenType) -> Option<ParseRule> {

@@ -8,16 +8,17 @@ pub enum OpCode {
     True = 3,
     False = 4,
     Pop = 5,
-    Equal = 6,
-    Greater = 7,
-    Less = 8,
-    Negate = 9,
-    Print = 10,
-    Add = 11,
-    Sub = 12,
-    Mul = 13,
-    Div = 14,
-    Not = 15,
+    DefineGlobal = 6,
+    Equal = 7,
+    Greater = 8,
+    Less = 9,
+    Negate = 10,
+    Print = 11,
+    Add = 12,
+    Sub = 13,
+    Mul = 14,
+    Div = 15,
+    Not = 16,
 }
 
 #[derive(Debug)]
@@ -87,7 +88,6 @@ impl Chunk {
         let instruction: OpCode = self.code[offset].into();
         match instruction {
             OpCode::Return   => self.simple_instruction("OP_RETURN", offset),
-            OpCode::Constant => self.const_instruction("OP_CONSTANT", offset),
             OpCode::Negate   => self.simple_instruction("OP_NEGATE", offset),
             OpCode::Add      => self.simple_instruction("OP_ADD", offset),
             OpCode::Sub      => self.simple_instruction("OP_SUBTRACT", offset),
@@ -102,6 +102,9 @@ impl Chunk {
             OpCode::Greater  => self.simple_instruction("OP_GREATER", offset),
             OpCode::Less     => self.simple_instruction("OP_LESS", offset),
             OpCode::Print    => self.simple_instruction("OP_PRINT", offset),
+
+            OpCode::Constant => self.const_instruction("OP_CONSTANT", offset),
+            OpCode::DefineGlobal => self.const_instruction("OP_DEFINE_GLOBAL", offset),
         }
     }
 
@@ -130,16 +133,17 @@ impl From<u8> for OpCode {
             3 => OpCode::True,
             4 => OpCode::False,
             5 => OpCode::Pop,
-            6 => OpCode::Equal,
-            7 => OpCode::Greater,
-            8 => OpCode::Less,
-            9 => OpCode::Negate,
-            10 => OpCode::Print,
-            11 => OpCode::Add,
-            12 => OpCode::Sub,
-            13 => OpCode::Mul,
-            14 => OpCode::Div,
-            15 => OpCode::Not,
+            6 => OpCode::DefineGlobal,
+            7 => OpCode::Equal,
+            8 => OpCode::Greater,
+            9 => OpCode::Less,
+            10 => OpCode::Negate,
+            11 => OpCode::Print,
+            12 => OpCode::Add,
+            13 => OpCode::Sub,
+            14 => OpCode::Mul,
+            15 => OpCode::Div,
+            16 => OpCode::Not,
             _ => unimplemented!("Invalid OpCode"),
         }
     }

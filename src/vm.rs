@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::chunk::*;
 use crate::value::*;
 use crate::STACK_MAX;
@@ -8,6 +10,7 @@ pub struct VM {
     ip: usize,  // instruction index
     stack: Vec<Value>,
 //    stack_top: usize,
+    globals: HashMap<String, Value>,
 }
 
 pub enum InterpretError {
@@ -29,13 +32,17 @@ impl VM {
         Self {
 //            chunk: Chunk::new(),
             ip: 0,
-            stack: Vec::<Value>::with_capacity(STACK_MAX),
+            stack: Vec::with_capacity(STACK_MAX),
 //            stack_top: 0,
+            globals: HashMap::new(),
         }
     }
 
     // might be unnecessary
-    pub fn free(&mut self) {}
+    pub fn free(&mut self) {
+        //vm.strings?
+        self.globals = HashMap::new();
+    }
 
     pub fn push(&mut self, value: Value) {
         self.stack.push(value);
@@ -120,6 +127,19 @@ impl VM {
                 OpCode::True  => self.push(Value::Bool(true)),
                 OpCode::False => self.push(Value::Bool(false)),
                 OpCode::Pop   => { self.pop(); }, // why do I need to put this in a block?
+                OpCode::DefineGlobal => {
+                    let name = self.read_constant(chunk).clone();
+                    if let Value::Str(s) = name {
+                        // Might not be necessary here, but we pop the value after we add it to
+                        // the hash table to ensure that the VM can still find the value if a GC
+                        // is triggerd in the middle of adding it to the hash table since it requires
+                        // dynamic allocation when it resizes.
+                        self.globals.insert(s, self.peek(0).clone());
+                        self.pop();
+                    } else {
+                        panic!("Unable to read constant from table.");
+                    }
+                }
                 OpCode::Equal => {
                     let (b, a) = (self.pop(), self.pop());
                     self.push(Value::Bool(b == a));
