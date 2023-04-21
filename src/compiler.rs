@@ -313,6 +313,16 @@ impl<'a> Compiler<'a> {
         self.emit_constant(value);
     }
 
+    fn named_variable(&mut self, name: String) {
+        //TODO double check the expect message
+        let arg = self.identifier_constant(name).expect("No corresponding variable.");
+        self.emit_bytes(OpCode::GetGlobal.into(), arg);
+    }
+
+    fn variable(&mut self) {
+        self.named_variable(self.parser.previous.lexeme.clone());
+    }
+
     fn unary(&mut self) {
         let operator_type = self.parser.previous.toke;
 
@@ -476,6 +486,12 @@ impl<'a> Compiler<'a> {
         rules[TokenType::String.int_value()] =
             ParseRule {
                 prefix: Some(|c| c.string()),
+                infix: None,
+                precedence: Precedence::None,
+            };
+        rules[TokenType::Identifier.int_value()] =
+            ParseRule {
+                prefix: Some(|c| c.variable()),
                 infix: None,
                 precedence: Precedence::None,
             };
