@@ -111,6 +111,7 @@ impl<'a> Compiler<'a> {
 
     fn error_at(&self, token: &Token, msg: &str) {
         if *self.parser.panic_mode.borrow() {
+            // if its already panicking, don't bother accumulating more errors
             return;
         };
 
@@ -150,8 +151,29 @@ impl<'a> Compiler<'a> {
         self.emit_byte(OpCode::Print.into());
     }
 
+    fn synchronize(&mut self) {
+        self.parser.panic_mode.replace(false);
+
+        while self.parser.current.toke != TokenType::EOF {
+            if self.parser.previous.toke == TokenType::Mic {
+                return;
+            }
+            use crate::token::TokenType::*;
+            match self.parser.current.toke {
+                Class | Fun | Var | For
+                    | If | While | Print
+                    | Return => return,
+                _ => self.advance(), //TODO double check this
+            }
+        }
+    }
+
     fn declaration(&mut self) {
         self.statement();
+
+        if *self.parser.panic_mode.borrow() {
+            self.synchronize();
+        }
     }
 
     fn statement(&mut self) {
