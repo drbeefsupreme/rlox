@@ -119,10 +119,11 @@ impl VM {
                 OpCode::Nil   => self.push(Value::Nil),
                 OpCode::True  => self.push(Value::Bool(true)),
                 OpCode::False => self.push(Value::Bool(false)),
+                OpCode::Pop   => { self.pop(); }, // why do I need to put this in a block?
                 OpCode::Equal => {
                     let (b, a) = (self.pop(), self.pop());
                     self.push(Value::Bool(b == a));
-                }
+                },
                 OpCode::Not   => {
                     let value = self.pop();
                     self.push(Value::Bool(value.is_falsey()));
