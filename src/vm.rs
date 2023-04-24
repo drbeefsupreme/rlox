@@ -134,7 +134,7 @@ impl VM {
                         match self.globals.get(&s) {
                             //TODO do i clone here?
                             Some(v) => self.push(v.clone()),
-                            None    => return self.runtime_error(chunk, &"Undefined variable {s}"),
+                            None    => return self.runtime_error(chunk, &format!("Undefined variable {s}")),
                         }
                     }
                 }
@@ -147,6 +147,18 @@ impl VM {
                         // dynamic allocation when it resizes.
                         self.globals.insert(s, self.peek(0).clone());
                         self.pop();
+                    } else {
+                        return self.runtime_error(chunk, &"Unable to read constant from table.");
+                    }
+                }
+                OpCode::SetGlobal => {
+                    let name = self.read_constant(chunk).clone();
+                    if let Value::Str(s) = name {
+                        if !self.globals.contains_key(&s) {
+                            return self.runtime_error(chunk, &format!("Undefined variable {s}"));
+                        } else {
+                            self.globals.insert(s, self.peek(0).clone());
+                        }
                     } else {
                         return self.runtime_error(chunk, &"Unable to read constant from table.");
                     }

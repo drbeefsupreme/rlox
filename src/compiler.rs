@@ -48,8 +48,8 @@ impl Precedence {
 
 #[derive(Copy, Clone)]
 struct ParseRule {
-    prefix: Option<fn(&mut Compiler)>,
-    infix: Option<fn(&mut Compiler)>,
+    prefix: Option<fn(&mut Compiler, bool)>,
+    infix: Option<fn(&mut Compiler, bool)>,
     precedence: Precedence,
 }
 
@@ -263,7 +263,7 @@ impl<'a> Compiler<'a> {
         self.emit_return();
     }
 
-    fn binary(&mut self) {
+    fn binary(&mut self, _: bool) {
         let operator_type = self.parser.previous.toke;
         let rule = self.get_rule(operator_type).unwrap().precedence.next();
 
@@ -286,7 +286,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn literal(&mut self) {
+    fn literal(&mut self, _: bool) {
         let toke = self.parser.previous.toke;
         match toke {
             TokenType::False => self.emit_byte(OpCode::False.into()),
@@ -296,34 +296,40 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn grouping(&mut self) {
+    fn grouping(&mut self, _: bool) {
         self.expression();
         self.consume(TokenType::Par, "Expect ')' after expression.");
     }
 
-    fn number(&mut self) {
+    fn number(&mut self, _: bool) {
         //TODO clone lexeme?
         let value = Value::Number(self.parser.previous.lexeme.parse().unwrap());
         self.emit_constant(value);
     }
 
-    fn string(&mut self) {
+    fn string(&mut self, _: bool) {
         let len = self.parser.previous.lexeme.len() - 1;
         let value = Value::Str(self.parser.previous.lexeme[1..len].to_string());
         self.emit_constant(value);
     }
 
-    fn named_variable(&mut self, name: String) {
+    fn named_variable(&mut self, name: String, can_assign: bool) {
         //TODO double check the expect message
         let arg = self.identifier_constant(name).expect("No corresponding variable.");
-        self.emit_bytes(OpCode::GetGlobal.into(), arg);
+
+        if can_assign && self.mate(TokenType::Tis) {
+            self.expression();
+            self.emit_bytes(OpCode::SetGlobal.into(), arg);
+        } else {
+            self.emit_bytes(OpCode::GetGlobal.into(), arg);
+        }
     }
 
-    fn variable(&mut self) {
-        self.named_variable(self.parser.previous.lexeme.clone());
+    fn variable(&mut self, can_assign: bool) {
+        self.named_variable(self.parser.previous.lexeme.clone(), can_assign);
     }
 
-    fn unary(&mut self) {
+    fn unary(&mut self, _: bool) {
         let operator_type = self.parser.previous.toke;
 
         // Compile the operand
@@ -340,13 +346,18 @@ impl<'a> Compiler<'a> {
     fn parse_precedence(&mut self, precedence: Precedence) {
         self.advance();
         if let Some(prefix_rule) = self.rules[self.parser.previous.toke.int_value()].prefix {
-            prefix_rule(self);
+            let can_assign: bool = precedence <= Precedence::Assignment;
+            prefix_rule(self, can_assign);
 
             while precedence <= self.rules[self.parser.current.toke.int_value()].precedence {
                 self.advance();
 
                 if let Some(infix_rule) = self.rules[self.parser.previous.toke.int_value()].infix {
-                    infix_rule(self);
+                    infix_rule(self, can_assign);
+                }
+
+                if can_assign && self.mate(TokenType::Tis) {
+                    self.error("Invalid assignment target.");
                 }
             }
         } else {
@@ -389,109 +400,109 @@ impl<'a> Compiler<'a> {
 
         rules[TokenType::Pal.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.grouping()),
+                prefix: Some(|c, b| c.grouping(b)),
                 infix: None,
                 precedence: Precedence::None,
             };
         rules[TokenType::Hep.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.unary()),
-                infix: Some(|c| c.binary()),
+                prefix: Some(|c, b| c.unary(b)),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Term,
             };
         rules[TokenType::Lus.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Term,
             };
         rules[TokenType::Fas.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Factor,
             };
         rules[TokenType::Tar.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Factor,
             };
         rules[TokenType::Number.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.number()),
+                prefix: Some(|c, b| c.number(b)),
                 infix: None,
                 precedence: Precedence::None,
             };
         rules[TokenType::False.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.literal()),
+                prefix: Some(|c, b| c.literal(b)),
                 infix: None,
                 precedence: Precedence::None,
             };
         rules[TokenType::True.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.literal()),
+                prefix: Some(|c, b| c.literal(b)),
                 infix: None,
                 precedence: Precedence::None,
             };
         rules[TokenType::Nil.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.literal()),
+                prefix: Some(|c, b| c.literal(b)),
                 infix: None,
                 precedence: Precedence::None,
             };
         rules[TokenType::Zap.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.unary()),
+                prefix: Some(|c, b| c.unary(b)),
                 infix: None,
                 precedence: Precedence::None,
             };
         rules[TokenType::ZapTis.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Equality,
             };
         rules[TokenType::TisTis.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Equality,
             };
         rules[TokenType::Gar.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Comparison,
             };
         rules[TokenType::GarTis.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Comparison,
             };
         rules[TokenType::Gal.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Comparison,
             };
         rules[TokenType::GalTis.int_value()] =
             ParseRule {
                 prefix: None,
-                infix: Some(|c| c.binary()),
+                infix: Some(|c, b| c.binary(b)),
                 precedence: Precedence::Comparison,
             };
         rules[TokenType::String.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.string()),
+                prefix: Some(|c, b| c.string(b)),
                 infix: None,
                 precedence: Precedence::None,
             };
         rules[TokenType::Identifier.int_value()] =
             ParseRule {
-                prefix: Some(|c| c.variable()),
+                prefix: Some(|c, b| c.variable(b)),
                 infix: None,
                 precedence: Precedence::None,
             };
