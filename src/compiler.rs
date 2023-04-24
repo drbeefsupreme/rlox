@@ -65,7 +65,7 @@ impl Parser {
 }
 
 impl<'a> Compiler<'a> {
-    pub fn new(source: &String, chunk: &'a mut Chunk) -> Self {
+    pub fn new(source: &str, chunk: &'a mut Chunk) -> Self {
         Self {
             scanner: Scanner::new(source),
             parser: Parser::new(),

@@ -56,7 +56,7 @@ impl VM {
         &self.stack[self.stack.len() - distance - 1]
     }
 
-    pub fn interpret(&mut self, source: &String) -> Result<(), InterpretError> {
+    pub fn interpret(&mut self, source: &str) -> Result<(), InterpretError> {
         let mut chunk = Chunk::new();
         let mut compiler = Compiler::new(source, &mut chunk);
         compiler.compile()?;

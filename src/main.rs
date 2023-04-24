@@ -37,7 +37,7 @@ fn repl(vm: &mut VM) {
     loop {
         print!("> ");
 
-        let line = read!("{}\n");
+        let line: String = read!("{}\n");
         vm.interpret(&line);
     }
 }
