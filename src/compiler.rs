@@ -12,7 +12,7 @@ pub struct Compiler<'a> {
     parser: Parser,
     chunk: &'a mut Chunk,
     rules: Vec<ParseRule>,
-    locals: Vec<Local>, // this should probably be an array
+    locals: RefCell<Vec<Local>>, // this should probably be an array
     scope_depth: usize,
 }
 
@@ -25,7 +25,16 @@ pub struct Parser {
 
 struct Local {
     name: Token,
-    depth: usize,
+    depth: Option<usize>,
+}
+
+impl Local {
+    pub fn new(name: Token, depth: Option<usize>) -> Self {
+        Self {
+            name,
+            depth,
+        }
+    }
 }
 
 #[repr(usize)]
@@ -78,7 +87,7 @@ impl<'a> Compiler<'a> {
             parser: Parser::new(),
             chunk,
             rules: Self::build_parse_rule_table(),
-            locals: Vec::new(),
+            locals: RefCell::new(Vec::new()),
             scope_depth: 0,
         }
     }
@@ -290,6 +299,13 @@ impl<'a> Compiler<'a> {
 
     fn end_scope(&mut self) {
         self.scope_depth -= 1;
+
+        while !self.locals.borrow().is_empty()
+            && self.locals.borrow().last().unwrap().depth.unwrap() > self.scope_depth
+            {
+                self.emit_byte(OpCode::Pop.into());
+                self.locals.borrow_mut().pop();
+            }
     }
 
     fn binary(&mut self, _: bool) {
@@ -398,16 +414,48 @@ impl<'a> Compiler<'a> {
         self.make_constant(Value::Str(lex))
     }
 
+    fn add_local(&mut self, name: Token) {
+        let local = Local::new(name, Some(self.scope_depth));
+        self.locals.borrow_mut().push(local);
+    }
+
+    fn declare_variable(&mut self) {
+        if self.scope_depth == 0 {
+            return;
+        } else {
+            let name = self.parser.previous.lexeme.clone();
+            if self
+                .locals
+                .borrow()
+                .iter()
+                .filter(|x| x.name.lexeme == name)
+                .count()
+                != 0 {
+                self.error("already a variable with this name in this scope.");
+            } else {
+                self.add_local(self.parser.previous.clone());
+            }
+        }
+    }
+
     fn parse_variable(&mut self, msg: &str) -> u8 {
         //TODO the error should probably be threaded through differently - i think i'm
         // mixing up C and Rust conventions here
         self.consume(TokenType::Identifier, msg);
+
+        self.declare_variable();
+        if self.scope_depth > 0 {
+            return 0;
+        }
 
         //TODO do i clone here?
         self.identifier_constant(self.parser.previous.lexeme.clone()).expect(msg)
     }
 
     fn define_variable(&mut self, global: u8) {
+        if self.scope_depth > 0 {
+            return;
+        }
         self.emit_bytes(OpCode::DefineGlobal.into(), global);
     }
 

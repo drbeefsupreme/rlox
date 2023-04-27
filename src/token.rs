@@ -17,8 +17,16 @@ impl Default for Token {
     }
 }
 
+impl PartialEq for Token {
+    fn eq(&self, other: &Self) -> bool {
+        self.toke == other.toke && self.lexeme == other.lexeme
+    }
+}
+
+impl Eq for Token {}
+
 #[repr(usize)]
-#[derive(Debug, PartialEq, Clone, Copy, IntEnum)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, IntEnum)]
 pub enum TokenType {
     // Single-character tokens
     Pal = 0, Par = 1,  // ( )
