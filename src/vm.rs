@@ -163,6 +163,14 @@ impl VM {
                         return self.runtime_error(chunk, &"Unable to read constant from table.");
                     }
                 }
+                OpCode::GetLocal => {
+                    let slot = self.read_byte(chunk) as usize;
+                    self.stack[slot] = self.peek(0).clone();
+                }
+                OpCode::SetLocal => {
+                    let slot = self.read_byte(chunk) as usize;
+                    self.stack[slot] = self.peek(0).clone();
+                }
                 OpCode::Equal => {
                     let (b, a) = (self.pop(), self.pop());
                     self.push(Value::Bool(b == a));

@@ -360,14 +360,36 @@ impl<'a> Compiler<'a> {
 
     fn named_variable(&mut self, name: String, can_assign: bool) {
         //TODO double check the expect message
-        let arg = self.identifier_constant(name).expect("No corresponding variable.");
+//        let arg = self.identifier_constant(name).expect("No corresponding variable.");
+
+        let (arg, get_op, set_op) = if let Some(local_arg) = self.resolve_local(&name) {
+            (local_arg, OpCode::GetLocal, OpCode::SetLocal)
+        } else {
+            (
+                self.identifier_constant(name).unwrap() as u8,
+                OpCode::GetGlobal,
+                OpCode::SetGlobal,
+            )
+        };
 
         if can_assign && self.mate(TokenType::Tis) {
             self.expression();
-            self.emit_bytes(OpCode::SetGlobal.into(), arg);
+            self.emit_bytes(set_op.into(), arg);
         } else {
-            self.emit_bytes(OpCode::GetGlobal.into(), arg);
+            self.emit_bytes(get_op.into(), arg);
         }
+    }
+
+    fn resolve_local(&mut self, name: &String) -> Option<u8> {
+        for (e, v) in self.locals.borrow().iter().rev().enumerate() {
+            if v.name.lexeme == *name {
+                if v.depth.is_none() {
+                    self.error("Can't read local variable in its own initalizer.");
+                }
+                return Some((self.locals.borrow().len() - e - 1) as u8)
+            }
+        }
+        None
     }
 
     fn variable(&mut self, can_assign: bool) {
@@ -415,7 +437,7 @@ impl<'a> Compiler<'a> {
     }
 
     fn add_local(&mut self, name: Token) {
-        let local = Local::new(name, Some(self.scope_depth));
+        let local = Local::new(name, None);
         self.locals.borrow_mut().push(local);
     }
 
@@ -452,8 +474,15 @@ impl<'a> Compiler<'a> {
         self.identifier_constant(self.parser.previous.lexeme.clone()).expect(msg)
     }
 
+    fn mark_initialized(&mut self) {
+        let last = self.locals.borrow().len() - 1;
+        let mut locals = self.locals.borrow_mut();
+        locals[last].depth = Some(self.scope_depth);
+    }
+
     fn define_variable(&mut self, global: u8) {
         if self.scope_depth > 0 {
+            self.mark_initialized();
             return;
         }
         self.emit_bytes(OpCode::DefineGlobal.into(), global);
