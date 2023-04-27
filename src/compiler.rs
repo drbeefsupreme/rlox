@@ -12,6 +12,8 @@ pub struct Compiler<'a> {
     parser: Parser,
     chunk: &'a mut Chunk,
     rules: Vec<ParseRule>,
+    locals: Vec<Local>, // this should probably be an array
+    scope_depth: usize,
 }
 
 pub struct Parser {
@@ -19,6 +21,11 @@ pub struct Parser {
     previous: Token,
     had_error: RefCell<bool>,
     panic_mode: RefCell<bool>,
+}
+
+struct Local {
+    name: Token,
+    depth: usize,
 }
 
 #[repr(usize)]
@@ -71,6 +78,8 @@ impl<'a> Compiler<'a> {
             parser: Parser::new(),
             chunk,
             rules: Self::build_parse_rule_table(),
+            locals: Vec::new(),
+            scope_depth: 0,
         }
     }
 
@@ -139,6 +148,14 @@ impl<'a> Compiler<'a> {
         self.parse_precedence(Precedence::Assignment);
     }
 
+    fn block(&mut self) {
+        while !self.check(TokenType::Ker) && !self.check(TokenType::EOF) {
+            self.declaration();
+        }
+
+        self.consume(TokenType::Ker, "Expect '}' after block.");
+    }
+
     fn var_declaration(&mut self) {
         let global = self.parse_variable("Expect variable name.");
 
@@ -198,6 +215,10 @@ impl<'a> Compiler<'a> {
     fn statement(&mut self) {
         if self.mate(TokenType::Print) {
             self.print_statement();
+        } else if self.mate(TokenType::Kel) {
+            self.begin_scope();
+            self.block();
+            self.end_scope();
         } else {
             self.expression_statement();
         }
@@ -261,6 +282,14 @@ impl<'a> Compiler<'a> {
         }
 
         self.emit_return();
+    }
+
+    fn begin_scope(&mut self) {
+        self.scope_depth += 1;
+    }
+
+    fn end_scope(&mut self) {
+        self.scope_depth -= 1;
     }
 
     fn binary(&mut self, _: bool) {
